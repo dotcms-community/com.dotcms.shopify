@@ -1,0 +1,28 @@
+---
+name: "dot-shopify"
+description: "This app connects your dotCMS instance with a Shopify storefront.  It enables a custom fields that allow you to read from the shopify products and collections."  
+iconUrl: "https://static.dotcms.com/assets/icons/apps/shopify-logo.png"
+allowExtraParameters: true
+params:
+  storeName:
+    label: "Shopify Store Name"
+    value: ""
+    hidden: false
+    type: "STRING"
+    hint: "This is your unique store ID that makes up part of your shopify API URL.  API calls will end up being made using this value, e.g. https://{storeName}.myshopify.com  "
+    required: true
+  apiKey:
+    label: "Shopify Storefront Private Access Token"
+    value: ""
+    hidden: true
+    type: "STRING"
+    hint: "Shopify Private Access Token"
+    required: true
+  apiVersion:
+    label: "Shopify API Version"
+    value: "2025-07"
+    hidden: false
+    type: "STRING"
+    hint: "This is the shopify api version to use  - https://{storeName}.myshopify.com/api/{apiVersion}"
+    required: true
+

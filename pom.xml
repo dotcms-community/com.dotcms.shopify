@@ -1,0 +1,104 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.dotcms</groupId>
+    <artifactId>shopify</artifactId> <!-- Update artifactId to match your AOP project -->
+    <version>25.05.20</version>
+    <packaging>bundle</packaging>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <aspectj.version>1.8.10</aspectj.version> <!-- Adjust as per your AspectJ version -->
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>dotcms-repo</id>
+            <url>https://artifactory.dotcms.cloud/artifactory/libs-release</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.dotcms</groupId>
+            <artifactId>dotcms-core</artifactId>
+            <version>25.05.20-1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit</groupId>
+            <artifactId>junit-bom</artifactId>
+            <version>5.10.2</version>
+            <type>pom</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.12.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.17.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>5.17.0</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Add more dependencies as needed -->
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>5.1.9</version>
+                <extensions>true</extensions>
+
+                <configuration>
+                    <instructions>
+                        <Bundle-Vendor>dotCMS</Bundle-Vendor>
+                        <Bundle-Description>dotCMS - Shopify Connector</Bundle-Description>
+                        <Bundle-DocURL>https://www.dotcms.com/</Bundle-DocURL>
+                        <Bundle-Activator>com.dotcms.shopify.osgi.Activator</Bundle-Activator>
+                        <Bundle-ClassPath>.,{maven-dependencies}</Bundle-ClassPath>
+                        <Import-Package>*</Import-Package>
+                        <Export-Package>com.dotcms.shopify</Export-Package>
+                        <Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
+                        <Embed-Directory>lib</Embed-Directory>
+                        <Embed-StripGroup>true</Embed-StripGroup>
+                        <Embed-Transitive>true</Embed-Transitive>
+                    </instructions>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <includeScope>runtime</includeScope>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                        </configuration>
+                    </execution>
+
+                </executions>
+            </plugin>
+            <!-- Add AspectJ Maven plugin configuration if needed -->
+        </plugins>
+    </build>
+</project>

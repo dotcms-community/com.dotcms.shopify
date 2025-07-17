@@ -8,6 +8,7 @@ public class SearchForm {
 
 
     public final String searchTerm;
+
     public final int limit;
     public final int page;
     private SearchForm(Builder builder) {

@@ -60,19 +60,14 @@ public class ShopifyContentListener implements ContentletListener<Contentlet> {
         }
         final ShopifyAPI api = ShopifyAPI.api(host);
 
-        if(!api.syncContentTypeListener(contentlet.getContentType().variable())){
-            return;
-        }
+
 
 
         Logger.info(this.getClass(), "PublishEvent:"+contentletPublishEvent.isPublish()+", title:" + contentlet.getTitle());
 
         ContentModel cm = new ContentModel(contentlet);
 
-        debouncer.debounce(
-                    cm.getId(), ()->
-                        api.syncContentlet(contentlet)
-                   , 3, TimeUnit.SECONDS);
+
 
 
     }

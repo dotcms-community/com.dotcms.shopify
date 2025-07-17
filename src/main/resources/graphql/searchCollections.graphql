@@ -1,0 +1,23 @@
+query searchCollections($query: String!, $first: Int!, $after: String) {
+  collections(first: $first, query: $query, after: $after) {
+    edges {
+      node {
+        id
+        title
+        description
+        handle
+        updatedAt
+        image {
+          url
+          altText
+        }
+        productsCount
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

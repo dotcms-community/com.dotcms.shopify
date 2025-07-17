@@ -1,5 +1,5 @@
 ---
-name: "dot-shopify"
+name: "Shopify Connector"
 description: "This app connects your dotCMS instance with a Shopify storefront.  It enables a custom fields that allow you to read from the shopify products and collections."  
 iconUrl: "https://static.dotcms.com/assets/icons/apps/shopify-logo.png"
 allowExtraParameters: true
@@ -25,4 +25,3 @@ params:
     type: "STRING"
     hint: "This is the shopify api version to use  - https://{storeName}.myshopify.com/api/{apiVersion}"
     required: true
-

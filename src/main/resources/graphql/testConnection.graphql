@@ -1,5 +1,9 @@
 query ShopName {
-	shop {
-		name
-	}
+  shop {
+    name
+    id
+    primaryDomain{
+      host
+    }
+  }
 }

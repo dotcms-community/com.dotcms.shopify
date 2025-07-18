@@ -9,6 +9,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 public interface ShopifyAPI {
 
+
     static ShopifyAPI api(Host host) {
         return new ShopifyAPIImpl(host);
     }
@@ -31,5 +32,5 @@ public interface ShopifyAPI {
 
 
 
-    boolean testConfig();
+    Map<String, Object> testConnection();
 }

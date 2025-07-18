@@ -3,7 +3,7 @@ package com.dotcms.shopify.listener;
 import com.dotcms.ai.validator.AIAppValidator;
 import com.dotcms.security.apps.AppSecretSavedEvent;
 import com.dotcms.shopify.api.ShopifyAPI;
-import com.dotcms.shopify.util.DotShopifyApp;
+import com.dotcms.shopify.util.ShopifyApp.AppKey;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.system.event.local.model.KeyFilterable;
 import com.dotmarketing.beans.Host;
@@ -65,7 +65,7 @@ public final class ShopifyAppListener implements EventSubscriber<AppSecretSavedE
 
   @Override
   public Comparable<String> getKey() {
-    return DotShopifyApp.DOT_SHOPIFY_APP_KEY.name();
+    return AppKey.DOT_SHOPIFY_APP_KEY.name();
   }
 
 }

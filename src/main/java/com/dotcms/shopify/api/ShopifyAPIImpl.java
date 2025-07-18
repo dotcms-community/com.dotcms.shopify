@@ -94,8 +94,8 @@ public class ShopifyAPIImpl implements ShopifyAPI {
     }
 
     @Override
-    public boolean testConfig() {
-        return false;
+    public Map<String, Object> testConnection() {
+        return shopifyService.testConnection();
     }
 
 

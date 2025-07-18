@@ -25,3 +25,10 @@ params:
     type: "STRING"
     hint: "This is the shopify api version to use  - https://{storeName}.myshopify.com/api/{apiVersion}"
     required: true
+  buttonParam:
+    hidden: false
+    type: "BUTTON"
+    label: "Metadata"
+    hint: "Test Shopify Connection"
+    required: true
+    value: "/api/v1/dotsaml/metadata/$siteId"

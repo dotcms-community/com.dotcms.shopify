@@ -3,11 +3,13 @@ package com.dotcms.shopify.osgi;
 import com.dotcms.filters.interceptor.FilterWebInterceptorProvider;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
+import com.dotcms.rest.config.RestServiceUtil;
 import com.dotcms.security.apps.AppSecretSavedEvent;
 import com.dotcms.shopify.listener.ShopifyAppListener;
 import com.dotcms.shopify.listener.ShopifyContentListener;
 import com.dotcms.shopify.rest.ShopifyInterceptor;
-import com.dotcms.shopify.util.DotShopifyApp;
+import com.dotcms.shopify.rest.ShopifyResource;
+import com.dotcms.shopify.util.ShopifyApp;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.filters.InterceptorFilter;
@@ -23,9 +25,14 @@ public class Activator extends GenericBundleActivator {
       FilterWebInterceptorProvider.getInstance(Config.CONTEXT).getDelegate(
           InterceptorFilter.class);
   final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+
   private final WebInterceptor[] webInterceptors = {new ShopifyInterceptor()};
+
   private final ShopifyAppListener shopifyAppListener = new ShopifyAppListener();
+
   private final ShopifyContentListener shopifyContentListener = new ShopifyContentListener();
+
+
 
   public void start(final org.osgi.framework.BundleContext context) throws Exception {
 
@@ -38,11 +45,16 @@ public class Activator extends GenericBundleActivator {
     //Logger.info(Activator.class.getName(), "Copying dotCDN APP");
     activatorUtil.copyAppYml();
 
+
+    RestServiceUtil.addResource(ShopifyResource.class);
+
+
+
     //Register Receiver PP listener events.
     localSystemEventsAPI.subscribe(shopifyContentListener);
     localSystemEventsAPI.subscribe(AppSecretSavedEvent.class, shopifyAppListener);
 
-    activatorUtil.moveJarFilestoFileAssets("graphql", DotShopifyApp.GRAPHQL_QUERY_PATH);
+    activatorUtil.moveJarFilestoFileAssets("graphql", ShopifyApp.GRAPHQL_QUERY_FILES_PATH);
     activatorUtil.moveJarFilestoFileAssets("vtl", "/application/shopify/vtl");
   }
 
@@ -70,7 +82,11 @@ public class Activator extends GenericBundleActivator {
     localSystemEventsAPI.unsubscribe(shopifyContentListener);
     localSystemEventsAPI.unsubscribe(shopifyAppListener);
 
+    RestServiceUtil.removeResource(ShopifyResource.class);
+
     Logger.info(Activator.class.getName(), "Stopping Shopify Plugin");
+
+
   }
 
 

@@ -1,0 +1,16 @@
+
+fragment VariantFields on ProductVariant {
+    id
+    displayName
+    sku
+    title
+    image{
+        altText
+        height
+        width
+        url
+    }
+    title
+    price
+    sku
+}

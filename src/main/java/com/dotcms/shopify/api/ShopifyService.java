@@ -1,7 +1,10 @@
 package com.dotcms.shopify.api;
 
+import com.dotcms.shopify.osgi.ActivatorUtil;
 import com.dotcms.shopify.util.ShopifyApp;
 import com.dotcms.shopify.util.ShopifyApp.AppKey;
+import com.dotcms.shopify.util.ShopifyCache;
+import com.dotcms.shopify.util.ShopifyCache.CacheType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -39,12 +42,44 @@ public class ShopifyService {
   private final Host host;
 
 
+  private final ShopifyCache cache = ShopifyCache.getInstance();
+
+
   public ShopifyService(Host host) {
     this.host = host;
     this.httpClient = HttpClient.newBuilder()
         .connectTimeout(DEFAULT_TIMEOUT)
         .build();
+
+
   }
+
+
+  private Map<String, String> getFragmentMap() {
+    Map<String, String> cacheMap = (Map<String, String>) cache.get(CacheType.GRAPHQL, "FRAGMENT_MAP");
+    if (cacheMap != null) {
+      return cacheMap;
+    }
+
+    synchronized (this.getClass()) {
+      cacheMap = (Map<String,String>) cache.get(CacheType.GRAPHQL, "FRAGMENT_MAP");
+      if (cacheMap ==null) {
+        Map<String, String> fragmentMap = new HashMap<>();
+        List<String> fragmentNames = ActivatorUtil.listFilesInPackage("graphql");
+        fragmentNames
+            .stream()
+            .filter(n -> n.contains("fragment.gql"))
+            .forEach(fragmentPath -> {
+              String fragmentName = fragmentPath.replaceAll("graphql/", "");
+              String query = loadQueryFromFileasset(fragmentName);
+              fragmentMap.put(fragmentName, query);
+            });
+        cache.put(CacheType.GRAPHQL, "FRAGMENT_MAP", Map.copyOf(fragmentMap));
+      }
+    }
+    return (Map<String,String>) cache.get(CacheType.GRAPHQL, "FRAGMENT_MAP");
+  }
+
 
   /**
    * Load a GraphQL query from the resources directory
@@ -53,25 +88,24 @@ public class ShopifyService {
    * @return The query string
    */
 
-  private String loadGraphQLQuery(String queryFileName) {
+  private String loadQueryFromFileasset(String queryFileName) {
     Host defaultSite = Try.of(() -> APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false))
         .getOrNull();
-
 
     String path = ShopifyApp.GRAPHQL_QUERY_FILES_PATH + "/" + queryFileName;
     FileAsset asset = APILocator.getFileAssetAPI()
         .getFileByPath(path, defaultSite,
             APILocator.getLanguageAPI().getDefaultLanguage().getId(), false);
 
-    String query = null;
+    String query;
 
     try (InputStream inputStream = asset.getInputStream()) {
       query = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8).trim();
     } catch (Exception e) {
-      throw new DotRuntimeException("unable to load graphql query: " + queryFileName, e);
+      throw new DotRuntimeException("unable to load.gql query: " + queryFileName, e);
     }
     if (UtilMethods.isEmpty(query)) {
-      throw new DotRuntimeException("graphql query is empty: " + queryFileName);
+      throw new DotRuntimeException(".gql query is empty " + queryFileName);
     }
 
     return query;
@@ -91,6 +125,15 @@ public class ShopifyService {
    * @return The response data as a Map
    */
   public JSONObject executeGraphQLQuery(String query, Map<String, Object> variables) {
+
+
+    for (Map.Entry<String, String> entry : getFragmentMap().entrySet()) {
+      query= query.replace("$" + entry.getKey(), entry.getValue());
+    }
+
+
+
+
     try {
       // Get configuration
       Map<Object, String> config = getShopifyConfig();
@@ -115,6 +158,7 @@ public class ShopifyService {
       // Build the request body
       JSONObject requestBody = new JSONObject();
       requestBody.put("query", query);
+
       if (variables != null && !variables.isEmpty()) {
         requestBody.put("variables", new JSONObject(variables));
       }
@@ -133,12 +177,11 @@ public class ShopifyService {
 
       Map<String, List<String>> headers = response.headers().map();
       if (response.statusCode() == 200) {
-        String responseBody = response.body();
-        return new JSONObject(responseBody);
+        return new JSONObject(response.body());
       } else {
         Logger.error(this, "GraphQL request failed with status: " + response.statusCode() +
             ", body: " + response.body());
-        return new JSONObject(Map.of("errors","GraphQL request failed with status: " + response.statusCode() +
+        return new JSONObject(Map.of("errors", "GraphQL request failed with status: " + response.statusCode() +
             ", body: " + response.body()));
       }
 
@@ -149,24 +192,24 @@ public class ShopifyService {
   }
 
 
-  public Map<String, Object> getProductById(String productId) {
-
-    return getProductById(Long.parseLong(productId));
+  public Map<String, Object> getProductByHandle(String productHandle) {
+    String query = loadQueryFromFileasset("getProductByHandle.gql");
+    Map<String, Object> variables = Map.of("handle", productHandle);
+    return executeGraphQLQuery(query, variables);
 
   }
 
 
   public Map<String, Object> testConnection() {
-    String query = loadGraphQLQuery("testConnection.graphql");
+    String query = loadQueryFromFileasset("testConnection.gql");
     String configStoreName = getShopifyConfig().get(AppKey.STORE_NAME);
 
-    if(UtilMethods.isEmpty(configStoreName)){
+    if (UtilMethods.isEmpty(configStoreName)) {
       return Map.of("connection", "Error: No Shopify configuration found for host: " + host.getHostname());
     }
 
-
     JSONObject response = executeGraphQLQuery(query);
-    if(response.toString().contains(configStoreName)){
+    if (response.toString().contains(configStoreName)) {
       return new JSONObject(Map.of("connection", "Success", "response", response));
     }
     return new JSONObject(Map.of("connection", "Error", "response", response));
@@ -180,8 +223,8 @@ public class ShopifyService {
    * @param productId The Shopify product ID (gid format)
    * @return Product data as a Map
    */
-  public Map<String, Object> getProductById(long productId) {
-    String query = loadGraphQLQuery("getProductById.graphql");
+  public Map<String, Object> getProductById(String productId) {
+    String query = loadQueryFromFileasset("getProductById.gql");
     if (query.isEmpty()) {
       Logger.error(this, "Failed to load getProductById query");
       return Collections.emptyMap();
@@ -190,8 +233,8 @@ public class ShopifyService {
     Map<String, Object> variables = new HashMap<>();
     variables.put("id", productId);
 
-    Map<String, Object> response = executeGraphQLQuery(query, variables);
-    return extractDataField(response, "product");
+    return executeGraphQLQuery(query, variables);
+    //return extractDataField(response, "product");
   }
 
   /**
@@ -203,7 +246,7 @@ public class ShopifyService {
    * @return List of products
    */
   public List<Map<String, Object>> searchProducts(String searchQuery, int limit, String after) {
-    String query = loadGraphQLQuery("searchProducts.graphql");
+    String query = loadQueryFromFileasset("searchProducts.gql");
     if (query.isEmpty()) {
       Logger.error(this, "Failed to load searchProducts query");
       return Collections.emptyList();
@@ -227,7 +270,7 @@ public class ShopifyService {
    * @return Collection data as a Map
    */
   public Map<String, Object> getCollectionById(String collectionId) {
-    String query = loadGraphQLQuery("getCollectionById.graphql");
+    String query = loadQueryFromFileasset("getCollectionById.gql");
     if (query.isEmpty()) {
       Logger.error(this, "Failed to load getCollectionById query");
       return Collections.emptyMap();
@@ -249,7 +292,7 @@ public class ShopifyService {
    * @return List of collections
    */
   public List<Map<String, Object>> searchCollections(String searchQuery, int limit, String after) {
-    String query = loadGraphQLQuery("searchCollections.graphql");
+    String query = loadQueryFromFileasset("searchCollections.gql");
     if (query.isEmpty()) {
       Logger.error(this, "Failed to load searchCollections query");
       return Collections.emptyList();

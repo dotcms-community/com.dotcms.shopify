@@ -1,0 +1,48 @@
+fragment ProductFields on Product {
+    id
+    title
+    productType
+    descriptionHtml
+    category{
+        fullName
+    }
+    tags
+    vendor
+    handle
+    description
+    handle
+    productType
+    vendor
+    tags
+    createdAt
+    updatedAt
+    publishedAt
+    priceRangeV2 {
+        minVariantPrice {
+            amount
+            currencyCode
+        }
+        maxVariantPrice {
+            amount
+            currencyCode
+        }
+    }
+    media(first: 10) {
+        edges {
+            node {
+                id
+                alt
+                mediaContentType
+                preview {
+                    image {
+                        altText
+                        height
+                        width
+                        url
+                    }
+                }
+
+            }
+        }
+    }
+}

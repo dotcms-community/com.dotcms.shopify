@@ -28,7 +28,7 @@ params:
   buttonParam:
     hidden: false
     type: "BUTTON"
-    label: "Metadata"
+    label: "Test Shopify Connection"
     hint: "Test Shopify Connection"
-    required: true
-    value: "/api/v1/dotsaml/metadata/$siteId"
+    required: false
+    value: "/api/v1/shopify/test?host_id=${siteId}"

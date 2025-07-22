@@ -10,6 +10,7 @@ import com.dotcms.shopify.listener.ShopifyContentListener;
 import com.dotcms.shopify.rest.ShopifyInterceptor;
 import com.dotcms.shopify.rest.ShopifyResource;
 import com.dotcms.shopify.util.ShopifyApp;
+import com.dotcms.shopify.viewtool.DotShopifyToolInfo;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.filters.InterceptorFilter;
@@ -47,6 +48,8 @@ public class Activator extends GenericBundleActivator {
 
 
     RestServiceUtil.addResource(ShopifyResource.class);
+
+    registerViewToolService( context, new DotShopifyToolInfo() );
 
 
 

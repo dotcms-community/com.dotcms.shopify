@@ -115,11 +115,11 @@ public class ActivatorUtil {
 
   }
 
-  List<String> listFilesInPackage(@Nonnull String packagePath) {
+  public static List<String> listFilesInPackage(@Nonnull String packagePath) {
     List<String> fileList = new ArrayList<>();
 
     try {
-      String jarPath = this.getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
+      String jarPath = ActivatorUtil.class.getProtectionDomain().getCodeSource().getLocation().getPath();
 
       try (java.util.jar.JarFile jarFile = new java.util.jar.JarFile(jarPath)) {
         java.util.Enumeration<java.util.jar.JarEntry> entries = jarFile.entries();

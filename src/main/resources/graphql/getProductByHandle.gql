@@ -1,5 +1,5 @@
-query getProduct($id: ID!) {
-  product(id: $id) {
+query($handle: ProductIdentifierInput!) {
+  product: productByIdentifier(identifier: $handle) {
     id
     title
     description

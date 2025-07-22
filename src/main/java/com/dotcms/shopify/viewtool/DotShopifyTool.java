@@ -26,14 +26,12 @@ public class DotShopifyTool implements ViewTool {
         this.api = Lazy.of(() -> ShopifyAPI.api(host));
     }
 
-    public Map<String, Object> getProduct(long productId) {
-        return this.getProduct(String.valueOf(productId));
-
-
+    public Map<String, Object> getProduct(String productId) {
+        return api.get().productById(productId);
     }
 
-    public Map<String, Object> getProduct(String productId) {
-       return api.get().productById(productId);
+    public Map<String, Object> getProductByHandle(String handle) {
+       return api.get().productById(handle);
 
 
     }

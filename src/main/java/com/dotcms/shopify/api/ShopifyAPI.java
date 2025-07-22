@@ -22,6 +22,8 @@ public interface ShopifyAPI {
 
     public List<Map<String, Object>> collectionSearch(String query, int limit, int page);
 
+    Map<String, Object> getProductByHandle(String handle);
+
     public Map<String, Object> rawQuery(String query);
 
     public Map<String, Object> rawQuery(String query, Map<String, Object> variables);

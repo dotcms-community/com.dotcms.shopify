@@ -12,6 +12,10 @@ query GetProduct($id: ID!) {
   }
 }
 
+# storefrontAPI 2025-07
+fragment ProductFields on Product {
 $product.fragment.gql
-
+}
+fragment VariantFields on ProductVariant {
 $variant.fragment.gql
+}

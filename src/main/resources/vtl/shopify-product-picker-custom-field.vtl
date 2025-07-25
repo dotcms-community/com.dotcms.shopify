@@ -1,1 +1,220 @@
-Shopify product picker
+#[[
+
+<!-- shopify-product-picker.js -->
+<script type="module">
+  // Debounce utility
+  function debounce(fn, delay) {
+    let timeout;
+    return function(...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => fn.apply(this, args), delay);
+    };
+  }
+
+  var cursor;
+  class ShopifyProductPicker extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: 'open' });
+      this.selectedProductKey = 'selectedShopifyProduct';
+      this.state = {
+        selected: null,
+        search: '',
+        results: [],
+        searching: false,
+        modalOpen: false,
+        error: ''
+      };
+      this.apiEndpoint = "/api/v1/shopify/product/_search" ;
+      this.debouncedHandleSearchInput = debounce(this.handleSearchInput.bind(this), 300);
+    }
+
+    connectedCallback() {
+      this.render();
+      this.loadSelectedFromStorage();
+      this.shadowRoot.addEventListener('click', this.handleDocumentClick.bind(this));
+    }
+
+    disconnectedCallback() {
+      this.shadowRoot.removeEventListener('click', this.handleDocumentClick);
+    }
+
+    handleDocumentClick(e) {
+      if (e.target.matches('.choose-btn')) {
+        this.toggleModal(true);
+      } else if (e.target.matches('.close-modal')) {
+        this.toggleModal(false);
+      } else if (e.target.matches('.product-card')) {
+        this.selectProductFromResult(e.target.dataset.idx);
+      }
+    }
+
+    loadSelectedFromStorage() {
+      const product = localStorage.getItem(this.selectedProductKey);
+      if (product) {
+        this.state.selected = JSON.parse(product);
+        this.render();
+      }
+    }
+
+    saveSelectedToStorage() {
+      if (this.state.selected)
+        localStorage.setItem(this.selectedProductKey, JSON.stringify(this.state.selected));
+      else
+        localStorage.removeItem(this.selectedProductKey);
+    }
+
+    toggleModal(open) {
+      this.state.modalOpen = open;
+      this.state.search = '';
+      this.state.results = [];
+      this.state.error = '';
+      this.state.searching = false;
+      this.render();
+      if (open) this.shadowRoot.querySelector('.search-input').focus();
+    }
+
+    async handleSearchInput(e) {
+      const query = e.target.value;
+      this.state.search = query;
+      this.state.error = '';
+      if (query.trim().length < 2) {
+        this.state.results = [];
+        this.render();
+        return;
+      }
+      this.state.searching = true;
+      this.render();
+
+      try {
+        // ⚡️ Update this to your actual API endpoint.
+        const resp = await fetch(`${this.apiEndpoint}?searchTerm=${query}`);
+        if (!resp.ok) throw new Error(resp.statusText);
+        const data = await resp.json();
+        // Expected array of products (id, title, image, body, etc.)
+        this.state.results = Array.isArray(data.products) ? data.products : data;
+        cursor = this.state.results[this.state.results.length - 1].cursor
+        console.log("cursor",cursor);
+
+        if (this.state.results.length === 0) this.state.error = 'No products found.';
+        this.state.searching = false;
+        this.render();
+      } catch (error) {
+        this.state.error = "Error searching products.";
+        this.state.searching = false;
+        this.render();
+      }
+    }
+
+
+    selectProductFromResult(idx) {
+      const prod = this.state.results[idx];
+      this.state.selected = prod;
+      this.saveSelectedToStorage();
+      this.toggleModal(false);
+      this.render();
+      this.dispatchEvent(
+              new CustomEvent('product-selected', { detail: prod, bubbles: true, composed: true })
+      );
+    }
+
+    clearSelected() {
+      this.state.selected = null;
+      this.saveSelectedToStorage();
+      this.render();
+    }
+
+    renderSelected() {
+      const prod = this.state.selected;
+      return prod
+              ? `
+        <div class="selected-product">
+          <img src="${prod.image || ''}" alt="${prod.title}" />
+          <div>
+            <div><b>${prod.title}</b></div>
+            <div>${prod.body_html ? prod.body_html.replace(/<[^>]+>/g, '').slice(0,80) : ''}...</div>
+            <button class="choose-btn">Change product</button>
+            <button class="clear-btn" title="Remove selection" onclick="this.getRootNode().host.clearSelected()">✕</button>
+          </div>
+        </div>
+      `
+              : `<button class="choose-btn">Choose a product</button>`;
+    }
+
+    renderModal() {
+      if (!this.state.modalOpen) return '';
+      return `
+      <div class="modal-backdrop">
+        <div class="modal">
+          <button class="close-modal" title="Close">×</button>
+          <input type="text" class="search-input" placeholder="Search Shopify products..." value="${this.state.search}" />
+          ${this.state.error ? `<div class="error">${this.state.error}</div>` : ''}
+      <div class="results">
+        ${
+              this.state.searching
+                      ? '<div class="spinner"></div>'
+                      : this.state.results.map((prod, i) => `
+                  <div class="product-card" data-idx="${i}" tabindex="0">
+                    <img src="${prod.image || ''}" alt="" />
+                    <div class="info">
+                      <div class="card-title">${prod.title}</div>
+                      <div class="card-body">${prod.body_html ? prod.body_html.replace(/<[^>]+>/g, '').slice(0,50) : ''}</div>
+                      <div class="card-id"><b>ID:</b> ${prod.id}</div>
+                    </div>
+                  </div>
+                `).join('')
+      }
+      </div>
+    </div>
+    </div>
+      `;
+    }
+
+    render() {
+      this.shadowRoot.innerHTML = `
+      <style>
+    :host { font-family: 'Segoe UI', Arial, sans-serif; }
+    .choose-btn,
+    .clear-btn { margin-top: 10px; padding: 7px 20px; border-radius: 6px; border: none; background: #0057d9; color: #fff; cursor: pointer; font-size: 16px; }
+    .clear-btn { background: #f44336; margin-left: 5px; }
+    .choose-btn:hover { background: #228bfd; }
+    .selected-product { display: flex; gap: 12px; align-items: flex-start; border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin: 10px 0;}
+    .selected-product img { width: 60px; height: 60px; object-fit: contain; border-radius: 6px; border: 1px solid #eee;}
+    .selected-product .clear-btn { font-size: 20px; padding: 2px 8px;}
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(48,53,67,0.18); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+    .modal { background: #fff; border-radius: 12px; padding: 25px 20px 20px 20px; width: 80vw; height: 80vh; box-shadow: 0 3px 32px #aaa7, 0 1.5px 4px #0001; position: relative; display: flex; flex-direction: column; }
+    .close-modal { position: absolute; right: 11px; top: 10px; font-size: 24px; border: none; background: none; cursor: pointer; color: #888;}
+    .search-input { width: 100%; font-size: 18px; padding: 10px; margin-bottom: 18px; border-radius: 6px; border: 1px solid #bbb; box-sizing: border-box;}
+    .results { flex: 1 1 auto; min-height: 0; max-height: unset; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+    .product-card { display: flex; gap: 16px; align-items: flex-start; border: 1px solid #eee; border-radius: 7px; padding: 11px 12px; background: #fafdff; cursor: pointer; transition: box-shadow 0.2s, background 0.2s;}
+    .product-card:hover, .product-card:focus { box-shadow: 0 2px 12px #0088ff22; background: #ecf1fc;}
+    .product-card img { width: 68px; height: 68px; object-fit: contain; background: #fafbfc; border-radius: 6px; border: 1px solid #eee;}
+    .info { flex: 1; line-height: 1.4; }
+    .card-title { font-weight: bold; font-size: 18px; margin-bottom: 5px;}
+    .card-body { font-size: 13px; margin-bottom: 3px; color: #555;}
+    .card-id { font-size: 12px; color: #777; }
+    .error { color: #ca2525; margin: 10px 0; }
+    .spinner { width: 36px; height: 36px; border: 4px solid #bbb3; border-top: 4px solid #2299ff; border-radius: 50%; animation: spin 1s linear infinite; margin: 40px auto;}
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+      <div class="product-search-root">
+          ${this.renderSelected()}
+      </div>
+            ${this.renderModal()}
+          `;
+      // Attach search input event if modal is open
+      if (this.state.modalOpen) {
+        const input = this.shadowRoot.querySelector('.search-input');
+        input && input.addEventListener('input', this.debouncedHandleSearchInput);
+      }
+    }
+  }
+
+  customElements.define('shopify-product-picker', ShopifyProductPicker);
+</script>
+
+<!-- Place this where you want the picker: -->
+<shopify-product-picker ></shopify-product-picker>
+
+
+]]#

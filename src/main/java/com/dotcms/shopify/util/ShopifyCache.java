@@ -13,8 +13,6 @@ public class ShopifyCache implements Cachable {
   // cache things 1m
   static long CACHE_DEFAULT_TTL = Config.getLongProperty("SHOPIFY_CACHE_TTL", 60 * 1000);
 
-  // cache up to 10000 objects
-  static long CACHE_DEFAULT_SIZE = Config.getLongProperty("SHOPIFY_CACHE_SIZE", 10000);
   private static Lazy<ShopifyCache> lazyInstance = Lazy.of(ShopifyCache::new);
   final DotCacheAdministrator cache;
 
@@ -44,7 +42,7 @@ public class ShopifyCache implements Cachable {
 
   public Object get(CacheType type, String key) {
     Object cacheObject = (Object) cache.getNoThrow(type.name() + key, getPrimaryGroup());
-    return cacheObject != null && cacheObject instanceof CacheValue ? ((CacheValue) cacheObject).value : cacheObject;
+    return cacheObject instanceof CacheValue ? ((CacheValue) cacheObject).value : cacheObject;
   }
 
   public void put(CacheType type, String key, Object valueIn, long ttl) {

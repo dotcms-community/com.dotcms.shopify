@@ -1,0 +1,8 @@
+/api/content/type/json/limit/100/query/%3Cp%3EThe%20German%20Book%20Prize%20is%20one%20of%20the%20most%20important%20literary%20prizes%20in%20Germany.%20The%20Deutsche%20Bank%20Foundation%20is%20the%20main%20sponsor%20of%20this%20award.%20Shortly%20after%20the%20announcement,%20the%20winner%20of%20this%20year&acute
+
+
+
+
+
+
+query\/((?:(?!\+).)*:|(?:(?!:).)*\+|[^:+]*)$

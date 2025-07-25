@@ -47,12 +47,12 @@ public final class ShopifyAppListener implements EventSubscriber<AppSecretSavedE
   @Override
   public void notify(final AppSecretSavedEvent event) {
     if (Objects.isNull(event)) {
-      Logger.debug(this, "Missing event, aborting");
+      Logger.info(this, "Missing event, aborting");
       return;
     }
 
     if (StringUtils.isBlank(event.getHostIdentifier())) {
-      Logger.debug(this, "Missing event's host id, aborting");
+      Logger.info(this, "Missing event's host id, aborting");
       return;
     }
 
@@ -60,12 +60,14 @@ public final class ShopifyAppListener implements EventSubscriber<AppSecretSavedE
     final Host host = Try.of(() -> hostAPI.find(hostId, APILocator.systemUser(), false))
         .getOrNull();
 
+    Logger.info(this, "Reloading Shopify API for host: " + host.getHostname());
+    Try.run(()->Thread.sleep(5 * 1000 ));
     ShopifyAPI.api(host).reload();
   }
 
   @Override
   public Comparable<String> getKey() {
-    return AppKey.DOT_SHOPIFY_APP_KEY.name();
+    return AppKey.DOT_SHOPIFY_APP_KEY.appValue;
   }
 
 }

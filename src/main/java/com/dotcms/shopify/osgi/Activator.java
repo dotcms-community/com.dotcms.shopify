@@ -1,10 +1,12 @@
 package com.dotcms.shopify.osgi;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.filters.interceptor.FilterWebInterceptorProvider;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
 import com.dotcms.rest.config.RestServiceUtil;
 import com.dotcms.security.apps.AppSecretSavedEvent;
+import com.dotcms.shopify.api.ShopifyAPI;
 import com.dotcms.shopify.listener.ShopifyAppListener;
 import com.dotcms.shopify.listener.ShopifyContentListener;
 import com.dotcms.shopify.rest.ShopifyInterceptor;
@@ -17,6 +19,7 @@ import com.dotmarketing.filters.InterceptorFilter;
 import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import java.util.concurrent.TimeUnit;
 import org.osgi.framework.BundleContext;
 
 
@@ -47,7 +50,7 @@ public class Activator extends GenericBundleActivator {
     activatorUtil.copyAppYml();
 
 
-    RestServiceUtil.addResource(ShopifyResource.class);
+
 
     registerViewToolService( context, new DotShopifyToolInfo() );
 
@@ -55,10 +58,18 @@ public class Activator extends GenericBundleActivator {
 
     //Register Receiver PP listener events.
     localSystemEventsAPI.subscribe(shopifyContentListener);
-    localSystemEventsAPI.subscribe(AppSecretSavedEvent.class, shopifyAppListener);
+    localSystemEventsAPI.subscribe(AppSecretSavedEvent.class, new ShopifyAppListener());
 
     activatorUtil.moveJarFilestoFileAssets("graphql", ShopifyApp.GRAPHQL_QUERY_FILES_PATH);
     activatorUtil.moveJarFilestoFileAssets("vtl", "/application/shopify/vtl");
+
+    activatorUtil.createShopifyExampleContentType();
+
+    // this should be done last in case the bundle fails to start
+    RestServiceUtil.addResource(ShopifyResource.class);
+
+    DotConcurrentFactory.getInstance().getSubmitter().submit(() -> ShopifyAPI.api(APILocator.systemHost()).reload(), 10,
+        TimeUnit.SECONDS);
   }
 
 

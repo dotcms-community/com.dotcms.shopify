@@ -1,7 +1,9 @@
 package com.dotcms.shopify.viewtool;
 
 import com.dotcms.shopify.api.ShopifyAPI;
+import com.dotmarketing.util.UtilMethods;
 import io.vavr.Lazy;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
@@ -29,6 +31,25 @@ public class DotShopifyTool implements ViewTool {
     public Map<String, Object> getProduct(String productId) {
         return api.get().productById(productId);
     }
+
+    public List<Map<String, Object>> searchProducts(String searchTerm, int limit) {
+        return api.get().searchProducts(searchTerm, limit);
+    }
+
+    public List<Map<String, Object>> searchProducts(String searchTerm, int limit, String cursor, String beforeOrAfter) {
+        if(UtilMethods.isEmpty(cursor)){
+            return api.get().searchProducts(searchTerm, limit);
+        }
+
+        if("BEFORE".equalsIgnoreCase(beforeOrAfter)){
+            return api.get().searchProducts(searchTerm, limit,cursor,ShopifyAPI.BEFORE_AFTER.BEFORE);
+        }else{
+            return api.get().searchProducts(searchTerm, limit,cursor,ShopifyAPI.BEFORE_AFTER.AFTER);
+        }
+
+    }
+
+
 
     public Map<String, Object> getProductByHandle(String handle) {
        return api.get().productById(handle);

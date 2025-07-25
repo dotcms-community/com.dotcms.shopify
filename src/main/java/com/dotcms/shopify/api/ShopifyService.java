@@ -1,5 +1,6 @@
 package com.dotcms.shopify.api;
 
+import com.dotcms.shopify.api.ShopifyAPI.BEFORE_AFTER;
 import com.dotcms.shopify.osgi.ActivatorUtil;
 import com.dotcms.shopify.util.ShopifyApp;
 import com.dotcms.shopify.util.ShopifyApp.AppKey;
@@ -11,7 +12,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import io.vavr.control.Try;
@@ -25,7 +25,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -50,8 +49,6 @@ public class ShopifyService {
     this.httpClient = HttpClient.newBuilder()
         .connectTimeout(DEFAULT_TIMEOUT)
         .build();
-
-
   }
 
 
@@ -62,8 +59,8 @@ public class ShopifyService {
     }
 
     synchronized (this.getClass()) {
-      cacheMap = (Map<String,String>) cache.get(CacheType.GRAPHQL, "FRAGMENT_MAP");
-      if (cacheMap ==null) {
+      cacheMap = (Map<String, String>) cache.get(CacheType.GRAPHQL, "FRAGMENT_MAP");
+      if (cacheMap == null) {
         Map<String, String> fragmentMap = new HashMap<>();
         List<String> fragmentNames = ActivatorUtil.listFilesInPackage("graphql");
         fragmentNames
@@ -77,7 +74,7 @@ public class ShopifyService {
         cache.put(CacheType.GRAPHQL, "FRAGMENT_MAP", Map.copyOf(fragmentMap));
       }
     }
-    return (Map<String,String>) cache.get(CacheType.GRAPHQL, "FRAGMENT_MAP");
+    return (Map<String, String>) cache.get(CacheType.GRAPHQL, "FRAGMENT_MAP");
   }
 
 
@@ -126,13 +123,9 @@ public class ShopifyService {
    */
   public JSONObject executeGraphQLQuery(String query, Map<String, Object> variables) {
 
-
     for (Map.Entry<String, String> entry : getFragmentMap().entrySet()) {
-      query= query.replace("$" + entry.getKey(), entry.getValue());
+      query = query.replace("$" + entry.getKey(), entry.getValue());
     }
-
-
-
 
     try {
       // Get configuration
@@ -160,7 +153,7 @@ public class ShopifyService {
       requestBody.put("query", query);
 
       if (variables != null && !variables.isEmpty()) {
-        requestBody.put("variables", new JSONObject(variables));
+        requestBody.put("variables", variables);
       }
 
       // Create the HTTP request
@@ -177,10 +170,13 @@ public class ShopifyService {
 
       Map<String, List<String>> headers = response.headers().map();
       if (response.statusCode() == 200) {
-        return new JSONObject(response.body());
+        String responseBody = response.body();
+        JSONObject jsonResponse =  new JSONObject(responseBody);
+        return jsonResponse.has("data") && ! jsonResponse.has("errors") ? jsonResponse.getJSONObject("data") : parseGraphQLResponse(responseBody);
       } else {
         Logger.error(this, "GraphQL request failed with status: " + response.statusCode() +
             ", body: " + response.body());
+        Logger.error(this, " Failed GraphQL query:" + query);
         return new JSONObject(Map.of("errors", "GraphQL request failed with status: " + response.statusCode() +
             ", body: " + response.body()));
       }
@@ -242,10 +238,9 @@ public class ShopifyService {
    *
    * @param searchQuery The search query
    * @param limit       Number of products to return
-   * @param after       Cursor for pagination
    * @return List of products
    */
-  public List<Map<String, Object>> searchProducts(String searchQuery, int limit, String after) {
+  public List<Map<String, Object>> searchProducts(String searchQuery, int limit) {
     String query = loadQueryFromFileasset("searchProducts.gql");
     if (query.isEmpty()) {
       Logger.error(this, "Failed to load searchProducts query");
@@ -255,13 +250,32 @@ public class ShopifyService {
     Map<String, Object> variables = new HashMap<>();
     variables.put("query", searchQuery);
     variables.put("first", limit);
-    if (UtilMethods.isSet(after)) {
-      variables.put("after", after);
-    }
 
     Map<String, Object> response = executeGraphQLQuery(query, variables);
     return extractProductList(response);
   }
+
+
+  public List<Map<String, Object>> searchProducts(String searchQuery, int limit, String cursor, BEFORE_AFTER beforeAfter) {
+
+    String query = beforeAfter== BEFORE_AFTER.BEFORE ? loadQueryFromFileasset("searchProductsBefore.gql") : loadQueryFromFileasset("searchProductsAfter.gql");
+    if (query.isEmpty()) {
+      Logger.error(this, "Failed to load searchProducts query");
+      return Collections.emptyList();
+    }
+
+    Map<String, Object> variables = new HashMap<>();
+    variables.put("query", searchQuery);
+    variables.put("limit", limit);
+    variables.put("cursor", cursor);
+
+    Map<String, Object> response = executeGraphQLQuery(query, variables);
+    return extractProductList(response);
+
+
+  }
+
+
 
   /**
    * Get collection by ID using GraphQL
@@ -291,7 +305,7 @@ public class ShopifyService {
    * @param after       Cursor for pagination
    * @return List of collections
    */
-  public List<Map<String, Object>> searchCollections(String searchQuery, int limit, String after) {
+  public List<Map<String, Object>> searchCollections(String searchQuery, int limit) {
     String query = loadQueryFromFileasset("searchCollections.gql");
     if (query.isEmpty()) {
       Logger.error(this, "Failed to load searchCollections query");
@@ -301,9 +315,6 @@ public class ShopifyService {
     Map<String, Object> variables = new HashMap<>();
     variables.put("query", searchQuery);
     variables.put("first", limit);
-    if (UtilMethods.isSet(after)) {
-      variables.put("after", after);
-    }
 
     Map<String, Object> response = executeGraphQLQuery(query, variables);
     return extractCollectionList(response);
@@ -336,9 +347,8 @@ public class ShopifyService {
   /**
    * Extract a specific data field from the GraphQL response
    */
-  private Map<String, Object> extractDataField(Map<String, Object> response, String field) {
+  private Map<String, Object> extractDataField(Map<String, Object> data, String field) {
     try {
-      Map<String, Object> data = (Map<String, Object>) response.get("data");
       if (data != null && data.containsKey(field)) {
         return (Map<String, Object>) data.get(field);
       }
@@ -351,17 +361,20 @@ public class ShopifyService {
   /**
    * Extract product list from GraphQL response
    */
-  private List<Map<String, Object>> extractProductList(Map<String, Object> response) {
+  private List<Map<String, Object>> extractProductList(Map<String, Object> data) {
     try {
-      Map<String, Object> data = (Map<String, Object>) response.get("data");
-      if (data != null && data.containsKey("products")) {
+      if (data.containsKey("products")) {
         Map<String, Object> products = (Map<String, Object>) data.get("products");
         List<Map<String, Object>> edges = (List<Map<String, Object>>) products.get("edges");
         if (edges != null) {
-          return edges.stream()
-              .map(edge -> (Map<String, Object>) edge.get("node"))
-              .filter(Objects::nonNull)
-              .collect(Collectors.toList());
+          List<Map<String, Object>> productsToReturn = new ArrayList<>();
+          for (Map<String, Object> edge : edges) {
+            Map<String, Object> product = (Map<String, Object>) edge.get("node");
+            product.put("cursor", edge.get("cursor"));
+            productsToReturn.add(product);
+          }
+          return productsToReturn;
+
         }
       }
     } catch (Exception e) {
@@ -373,9 +386,8 @@ public class ShopifyService {
   /**
    * Extract collection list from GraphQL response
    */
-  private List<Map<String, Object>> extractCollectionList(Map<String, Object> response) {
+  private List<Map<String, Object>> extractCollectionList(Map<String, Object> data) {
     try {
-      Map<String, Object> data = (Map<String, Object>) response.get("data");
       if (data != null && data.containsKey("collections")) {
         Map<String, Object> collections = (Map<String, Object>) data.get("collections");
         List<Map<String, Object>> edges = (List<Map<String, Object>>) collections.get("edges");
@@ -392,47 +404,5 @@ public class ShopifyService {
     return Collections.emptyList();
   }
 
-  /**
-   * Convert JSONObject to Map recursively
-   */
-  private Map<String, Object> jsonToMap(JSONObject json) throws JSONException {
-    Map<String, Object> map = new HashMap<>();
-    Iterator<String> keys = json.keys();
 
-    while (keys.hasNext()) {
-      String key = keys.next();
-      Object value = json.get(key);
-
-      if (value instanceof JSONObject) {
-        map.put(key, jsonToMap((JSONObject) value));
-      } else if (value instanceof JSONArray) {
-        map.put(key, jsonArrayToList((JSONArray) value));
-      } else {
-        map.put(key, value);
-      }
-    }
-
-    return map;
-  }
-
-  /**
-   * Convert JSONArray to List recursively
-   */
-  private List<Object> jsonArrayToList(JSONArray array) throws JSONException {
-    List<Object> list = new ArrayList<>();
-
-    for (int i = 0; i < array.length(); i++) {
-      Object value = array.get(i);
-
-      if (value instanceof JSONObject) {
-        list.add(jsonToMap((JSONObject) value));
-      } else if (value instanceof JSONArray) {
-        list.add(jsonArrayToList((JSONArray) value));
-      } else {
-        list.add(value);
-      }
-    }
-
-    return list;
-  }
 }

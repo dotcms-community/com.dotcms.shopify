@@ -1,20 +1,24 @@
 package com.dotcms.shopify.rest;
 
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.shopify.api.ShopifyAPI;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import java.io.Serializable;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -37,11 +41,6 @@ public class ShopifyResource implements Serializable {
     final User user = new WebResource.InitBuilder(request, response).rejectWhenNoUser(true)
         .requiredFrontendUser(true).init().getUser();
 
-    // final Lazy<Host> lazyCurrentHost = Lazy.of(() -> Try.of(() ->
-    // Host.class.cast(request.getSession().getAttribute(
-    // WebKeys.CURRENT_HOST))).getOrNull());
-    // final Host host = Try.of(()-> APILocator.getHostAPI().find(hostId, user,
-    // false)).getOrElse(lazyCurrentHost.get());
 
     return Response.ok().build();
 
@@ -52,13 +51,52 @@ public class ShopifyResource implements Serializable {
   @NoCache
   @Produces(MediaType.APPLICATION_JSON)
   public final Response purgeCache(@Context final HttpServletRequest request,
-      @Context final HttpServletResponse response, final SearchForm searchForm) {
+      @Context final HttpServletResponse response,
+      @QueryParam("searchTerm") String searchTerm,
+      @QueryParam("hostName") String hostName,
+      @QueryParam("limit") int limit,
+      @QueryParam("cursor") String cursor,
+      @QueryParam("beforeAfter") String beforeAfter) {
 
-    final User user = new WebResource.InitBuilder(request, response).rejectWhenNoUser(true)
+    final User user = new WebResource.InitBuilder(request, response)
+        .rejectWhenNoUser(true)
+        .requiredFrontendUser(true)
         .requiredBackendUser(true)
-        .init().getUser();
+        .init()
+        .getUser();
 
-    return Response.ok(new ResponseEntityView(Map.of("All Urls Sent Purged: ", ""))).build();
+
+    SearchForm searchForm = new SearchForm.Builder()
+        .searchTerm(searchTerm)
+        .hostName(hostName)
+        .limit(limit)
+        .cursor(cursor)
+        .beforeAfter(beforeAfter)
+        .build();
+
+
+
+    if (searchForm.searchTerm == null) {
+      return Response.ok(Map.of("errors", "No search term passed in")).build();
+    }
+
+    Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+
+    Host host = searchForm.hostName !=null
+        ?  Try.of(() -> APILocator.getHostAPI().resolveHostName(searchForm.hostName, user, true)).getOrElse(currentHost)
+        : currentHost;
+
+    ShopifyAPI api = ShopifyAPI.api(host);
+
+
+    if(UtilMethods.isEmpty(cursor)){
+      return Response.ok(api.searchProducts(searchForm.searchTerm, searchForm.limit)).build();
+    }
+
+
+    return Response.ok(api.searchProducts(searchForm.searchTerm,searchForm.limit,cursor,searchForm.getBeforeAfter())).build();
+
+
 
   }
 

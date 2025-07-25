@@ -1,53 +1,8 @@
-query($handle: ProductIdentifierInput!) {
-  product: productByIdentifier(identifier: $handle) {
-    id
-    title
-    description
-    handle
-    productType
-    vendor
-    tags
-    createdAt
-    updatedAt
-    publishedAt
-    priceRange {
-      minVariantPrice {
-        amount
-        currencyCode
-      }
-      maxVariantPrice {
-        amount
-        currencyCode
-      }
-    }
-    images(first: 10) {
-      edges {
-        node {
-          id
-          url
-          altText
-          width
-          height
-        }
-      }
-    }
-    variants(first: 50) {
-      edges {
-        node {
-          id
-          title
-          price {
-            amount
-            currencyCode
-          }
-          availableForSale
-          quantityAvailable
-          sku
-          barcode
-          weight
-          weightUnit
-        }
-      }
+query getProducts($query: String!) {
+  edges {
+    cursor
+    node {
+      title
     }
   }
 }

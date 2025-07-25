@@ -1,7 +1,7 @@
+# storefrontAPI 2025-07
 
-fragment VariantFields on ProductVariant {
     id
-    displayName
+
     sku
     title
     image{
@@ -11,6 +11,8 @@ fragment VariantFields on ProductVariant {
         url
     }
     title
-    price
+    price{
+        amount
+        currencyCode
+    }
     sku
-}

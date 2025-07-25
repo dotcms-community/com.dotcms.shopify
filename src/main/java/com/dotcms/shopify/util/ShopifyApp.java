@@ -23,7 +23,7 @@ public class ShopifyApp {
         host.getIdentifier());
     if (config == null) {
       config = loadAppConfigNoCache(host);
-      ShopifyCache.getInstance().put(CacheType.CONFIG, host.getIdentifier(), config);
+      ShopifyCache.getInstance().put(CacheType.CONFIG, host.getIdentifier(), config, 60*60*1000);
     }
 
     return config;

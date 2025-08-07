@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.Nonnull;
+import javax.swing.text.AbstractDocument.Content;
 import org.apache.commons.io.IOUtils;
 
 
@@ -89,20 +90,19 @@ public class ActivatorUtil {
   void moveJarFilestoFileAssets(@Nonnull String packagePathInJar, @Nonnull String destinationFolderPathIn,
       @Nonnull Host site) {
 
+    final String destinationFolderPath =
+        destinationFolderPathIn.endsWith("/") ? destinationFolderPathIn : destinationFolderPathIn + "/";
 
+    Folder testFolder = Try.of(()->APILocator.getFolderAPI().findFolderByPath(destinationFolderPath,site,APILocator.systemUser(),false)).getOrNull();
+    Folder destFolder = UtilMethods.isSet(()->testFolder.getIdentifier()) ? testFolder : Try.of(() ->
+        APILocator.getFolderAPI().createFolders(destinationFolderPath, site, APILocator.systemUser(), false)).getOrElseThrow(
+        DotRuntimeException::new);
 
-    Folder folder = Try.of(()->APILocator.getFolderAPI().findFolderByPath(destinationFolderPathIn,site,APILocator.systemUser(),false)).getOrNull();
-    if(UtilMethods.isSet(()->folder.getIdentifier())){
-      Try.run(()->APILocator.getFolderAPI().delete(folder,APILocator.systemUser(),false));
-    }
 
     try {
-      Folder destFolder = Try.of(() -> APILocator.getFolderAPI()
-          .createFolders(destinationFolderPathIn, site, APILocator.systemUser(), false)).getOrElseThrow(
-          DotRuntimeException::new);
 
-      final String destinationFolderPath =
-          destinationFolderPathIn.endsWith("/") ? destinationFolderPathIn : destinationFolderPathIn + "/";
+
+
 
       List<String> fileList = listFilesInPackage(packagePathInJar);
       for (String pathName : fileList) {
@@ -136,12 +136,17 @@ public class ActivatorUtil {
         fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
         fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, tmpFile);
         fileAsset.setTitle(fileName);
-
         fileAsset.setContentTypeId(APILocator.getContentTypeAPI(APILocator.systemUser())
             .find(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).id());
+
+        fileAsset.setProperty(Contentlet.DISABLE_WORKFLOW, true);
+
+
         fileAsset.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
         Contentlet dotfile = APILocator.getContentletAPI().checkin(fileAsset, APILocator.systemUser(), false);
+        dotfile.setProperty(Contentlet.DISABLE_WORKFLOW, true);
+
         APILocator.getContentletAPI().publish(dotfile, APILocator.systemUser(), false);
         Assert.verify(dotfile != null && dotfile.getIdentifier() != null, "Unable to create file asset: " + fileName);
         tmpFile.delete();

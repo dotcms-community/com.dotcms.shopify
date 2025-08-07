@@ -78,7 +78,7 @@ public class Activator extends GenericBundleActivator {
 
     // remove portlet, viewtool, actionlet
     this.unregisterServices(context);
-
+  this.unregisterViewToolServices();
     Logger.info(Activator.class.getName(), "Stopping Interceptor");
     for (WebInterceptor webIn : webInterceptors) {
       Logger.info(Activator.class.getName(), "Removing the " + webIn.getClass().getName());

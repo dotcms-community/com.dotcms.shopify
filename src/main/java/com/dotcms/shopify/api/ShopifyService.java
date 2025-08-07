@@ -129,15 +129,15 @@ public class ShopifyService {
 
     try {
       // Get configuration
-      Map<Object, String> config = getShopifyConfig();
+      Map<String, String> config = getShopifyConfig();
       if (config.isEmpty()) {
         Logger.error(this, "No Shopify configuration found for host: " + host.getHostname());
         return new JSONObject();
       }
 
-      String storeName = config.get(AppKey.STORE_NAME);
-      String apiKey = config.get(AppKey.API_KEY);
-      String apiVersion = config.get(AppKey.API_VERSION);
+      String storeName = config.get(AppKey.STORE_NAME.name());
+      String apiKey = config.get(AppKey.API_KEY.name());
+      String apiVersion = config.get(AppKey.API_VERSION.name());
 
       if (!UtilMethods.isSet(storeName) || !UtilMethods.isSet(apiKey) || !UtilMethods.isSet(apiVersion)) {
         Logger.error(this, "Missing required Shopify configuration values");
@@ -198,7 +198,7 @@ public class ShopifyService {
 
   public Map<String, Object> testConnection() {
     String query = loadQueryFromFileasset("testConnection.gql");
-    String configStoreName = getShopifyConfig().get(AppKey.STORE_NAME);
+    String configStoreName = getShopifyConfig().get(AppKey.STORE_NAME.name());
 
     if (UtilMethods.isEmpty(configStoreName)) {
       return Map.of("connection", "Error: No Shopify configuration found for host: " + host.getHostname());
@@ -323,8 +323,8 @@ public class ShopifyService {
   /**
    * Get Shopify configuration for the host
    */
-  private Map<Object, String> getShopifyConfig() {
-    Map<Object, String> config = ShopifyApp.instance(host);
+  private Map<String, String> getShopifyConfig() {
+    Map<String, String> config = ShopifyApp.instance(host);
     if (config == null || !config.containsKey(AppKey.API_KEY.name())) {
       return Map.of();
     }

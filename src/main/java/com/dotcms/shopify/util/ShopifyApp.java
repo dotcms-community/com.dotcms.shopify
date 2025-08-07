@@ -18,8 +18,8 @@ public class ShopifyApp {
   public static String GRAPHQL_QUERY_FILES_PATH = "/application/shopify/gql";
 
 
-  public static Map<Object, String> instance(@Nonnull Host host) {
-    Map<Object, String> config = (Map<Object, String>) ShopifyCache.getInstance().get(CacheType.CONFIG,
+  public static Map<String, String> instance(@Nonnull Host host) {
+    Map<String, String> config = (Map<String, String>) ShopifyCache.getInstance().get(CacheType.CONFIG,
         host.getIdentifier());
     if (config == null) {
       config = loadAppConfigNoCache(host);
@@ -30,7 +30,7 @@ public class ShopifyApp {
 
   }
 
-  private static Map<Object, String> loadAppConfigNoCache(@Nonnull Host host) {
+  private static Map<String, String> loadAppConfigNoCache(@Nonnull Host host) {
 
     Optional<AppSecrets> secrets = Try.of(
             () -> APILocator.getAppsAPI()
@@ -40,18 +40,16 @@ public class ShopifyApp {
     if (secrets.isEmpty()) {
       return Map.of();
     }
-    Map<Object, String> values = new HashMap<>();
+    Map<String, String> values = new HashMap<>();
     for (AppKey appKey : AppKey.values()) {
       String value = Try.of(() -> secrets.get().getSecrets().get(appKey.appValue).getString().trim()).getOrNull();
       if (UtilMethods.isSet(value)) {
         values.put(appKey.appValue, value);
         values.put(appKey.name(), value);
-        values.put(appKey, value);
       }
     }
     values.put(AppKey.STORE_NAME.appValue, parseStoreName(values.get(AppKey.STORE_NAME.appValue)));
     values.put(AppKey.STORE_NAME.name(), parseStoreName(values.get(AppKey.STORE_NAME.appValue)));
-    values.put(AppKey.STORE_NAME, parseStoreName(values.get(AppKey.STORE_NAME.appValue)));
     return values;
 
 

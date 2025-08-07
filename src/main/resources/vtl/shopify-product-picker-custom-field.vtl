@@ -18,9 +18,17 @@
       this.apiEndpoint = "/api/v1/shopify/product/_search" ;
     }
 
+    static get observedAttributes() {
+      return ['contentfield'];
+    }
+
+    get contentField() {
+      return this.getAttribute('contentfield');
+    }
+
     connectedCallback() {
       this.render();
-      this.loadSelectedFromStorage();
+      this.loadSelectedFromContentField();
       this.shadowRoot.addEventListener('click', this.handleDocumentClick.bind(this));
     }
 
@@ -38,11 +46,38 @@
       }
     }
 
+    loadSelectedFromContentField() {
+      if (this.contentField) {
+        const contentFieldElement = document.getElementById(this.contentField);
+        if (contentFieldElement && contentFieldElement.value) {
+          try {
+            this.state.selected = JSON.parse(contentFieldElement.value);
+            this.render();
+          } catch (e) {
+            console.warn('Failed to parse content field value:', e);
+          }
+        }
+      } else {
+        this.loadSelectedFromStorage();
+      }
+    }
+
     loadSelectedFromStorage() {
       const product = localStorage.getItem(this.selectedProductKey);
       if (product) {
         this.state.selected = JSON.parse(product);
         this.render();
+      }
+    }
+
+    saveSelectedToContentField() {
+      if (this.contentField) {
+        const contentFieldElement = document.getElementById(this.contentField);
+        if (contentFieldElement) {
+          contentFieldElement.value = this.state.selected ? JSON.stringify(this.state.selected) : '';
+        }
+      } else {
+        this.saveSelectedToStorage();
       }
     }
 
@@ -70,11 +105,11 @@
       this.state.error = '';
       if (query.trim().length < 2) {
         this.state.results = [];
-        //this.render();
+        this.updateResults();
         return;
       }
       this.state.searching = true;
-
+      this.updateResults();
 
       try {
         // ⚡️ Update this to your actual API endpoint.
@@ -85,89 +120,145 @@
         this.state.results = data;
         if (this.state.results.length === 0) this.state.error = 'No products found.';
         this.state.searching = false;
-        this.render();
+        this.updateResults();
       } catch (error) {
         this.state.error = "Error searching products.";
         this.state.searching = false;
-        this.render();
+        this.updateResults();
       }
     }
+    updateResults() {
+      const resultsContainer = this.shadowRoot.querySelector('.results');
+      const errorContainer = this.shadowRoot.querySelector('.error');
 
+      if (resultsContainer) {
+        resultsContainer.innerHTML = this.state.searching
+            ? '<div class="spinner"></div>'
+            : this.state.results.map((prod, i) => `
+            <div class="product-card" data-idx="${i}" tabindex="0">
+              <img src="${prod.media.edges[0].node.previewImage.url || ''}" alt="" />
+              <div class="info">
+                <div class="card-title">${prod.title}</div>
+                <div class="card-id"><b>Make</b> ${prod.vendor}</div>
+                <div class="card-id"><b>ID:</b> ${prod.id}</div>
+                <div class="card-body">${prod.description}</div>
+              </div>
+            </div>
+          `).join('');
+      }
+
+      // Update error display
+      const searchContainer = this.shadowRoot.querySelector('.search-input').parentElement;
+      let errorDiv = searchContainer.querySelector('.error');
+      if (this.state.error) {
+        if (!errorDiv) {
+          errorDiv = document.createElement('div');
+          errorDiv.className = 'error';
+          searchContainer.appendChild(errorDiv);
+        }
+        errorDiv.textContent = this.state.error;
+      } else if (errorDiv) {
+        errorDiv.remove();
+      }
+    }
     selectProductFromResult(idx) {
+
       const prod = this.state.results[idx];
       this.state.selected = prod;
-      this.saveSelectedToStorage();
+      this.saveSelectedToContentField();
       this.toggleModal(false);
       this.render();
       this.dispatchEvent(
-              new CustomEvent('product-selected', { detail: prod, bubbles: true, composed: true })
+          new CustomEvent('product-selected', { detail: prod, bubbles: true, composed: true })
       );
     }
 
     clearSelected() {
       this.state.selected = null;
-      this.saveSelectedToStorage();
+      this.saveSelectedToContentField();
       this.render();
     }
 
     renderSelected() {
       const prod = this.state.selected;
       return prod
-              ? `
+          ? `
         <div class="selected-product">
-          <img src="${prod.image || ''}" alt="${prod.title}" />
-          <div>
-            <div><b>${prod.title}</b></div>
-            <div>${prod.body_html ? prod.body_html.replace(/<[^>]+>/g, '').slice(0,80) : ''}...</div>
-            <button class="choose-btn">Change product</button>
-            <button class="clear-btn" title="Remove selection" onclick="this.getRootNode().host.clearSelected()">✕</button>
+          <img src="${prod.media && prod.media.edges && prod.media.edges[0] ? prod.media.edges[0].node.previewImage.url : ''}" alt="${prod.title}" />
+          <div class="selected-info">
+            <div class="selected-title"><b>${prod.title}</b></div>
+            <div class="selected-vendor">${prod.vendor}</div>
+            <div class="selected-price">$${prod.priceRange.minVariantPrice.amount}</div>
+            <div class="selected-description">${prod.description ? prod.description.slice(0, 100) + '...' : ''}</div>
+            <div class="selected-actions">
+              <button class="choose-btn">Change product</button>
+              <button class="clear-btn" title="Remove selection" onclick="this.getRootNode().host.clearSelected()">✕</button>
+            </div>
           </div>
         </div>
       `
-              : `<button class="choose-btn">Choose a product</button>`;
+          : `<button class="choose-btn">Choose a product</button>`;
+    }
+
+    renderSearchInput() {
+      return `
+        <input type="text" class="search-input" placeholder="Search Shopify products..." value="${this.state.search}" />
+        ${this.state.error ? `<div class="error">${this.state.error}</div>` : ''}
+      `;
+    }
+
+    renderResults() {
+      return `
+        <div class="results">
+          ${
+          this.state.searching
+              ? '<div class="spinner"></div>'
+              : this.state.results.map((prod, i) => `
+                <div class="product-card" data-idx="${i}" tabindex="0">
+                  <img src="${prod.media.edges[0].node.previewImage.url || ''}" alt="" />
+                  <div class="info">
+                    <div class="card-title">${prod.title}</div>
+                    <div class="card-id"><b>Make</b> ${prod.vendor}</div>
+                    <div class="card-id"><b>ID:</b> ${prod.id}</div>
+                    <div class="card-body">${prod.description}</div>
+                  </div>
+                </div>
+              `).join('')
+      }
+        </div>
+      `;
     }
 
     renderModal() {
       if (!this.state.modalOpen) return '';
       return `
-      <div class="modal-backdrop">
-        <div class="modal">
-          <button class="close-modal" title="Close">×</button>
-          <input type="text" class="search-input" placeholder="Search Shopify products..." value="${this.state.search}" />
-          ${this.state.error ? `<div class="error">${this.state.error}</div>` : ''}
-      <div class="results">
-        ${
-              this.state.searching
-                      ? '<div class="spinner"></div>'
-                      : this.state.results.map((prod, i) => `
-                  <div class="product-card" data-idx="${i}" tabindex="0">
-                    <img src="${prod.media.edges[0].node.previewImage.url || ''}" alt="" />
-                    <div class="info">
-                      <div class="card-title">${prod.title}</div>
-                      <div class="card-id"><b>Make</b> ${prod.vendor}</div>
-                      <div class="card-id"><b>ID:</b> ${prod.id}</div>
-                      <div class="card-body">${prod.description}</div>
-                    </div>
-                  </div>
-                `).join('')
-      }
-      </div>
-    </div>
-    </div>
+        <div class="modal-backdrop">
+          <div class="modal">
+            <button class="close-modal" title="Close">×</button>
+            ${this.renderSearchInput()}
+            ${this.renderResults()}
+          </div>
+        </div>
       `;
     }
 
     render() {
       this.shadowRoot.innerHTML = `
       <style>
-        :host { font-family: 'Segoe UI', Arial, sans-serif; }
+
         .choose-btn,
         .clear-btn { margin-top: 10px; padding: 7px 20px; border-radius: 6px; border: none; background: #0057d9; color: #fff; cursor: pointer; font-size: 16px; }
         .clear-btn { background: #f44336; margin-left: 5px; }
         .choose-btn:hover { background: #228bfd; }
-        .selected-product { display: flex; gap: 12px; align-items: flex-start; border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin: 10px 0;}
-        .selected-product img { width: 60px; height: 60px; object-fit: contain; border-radius: 6px; border: 1px solid #eee;}
-        .selected-product .clear-btn { font-size: 20px; padding: 2px 8px;}
+        .selected-product { display: flex; gap: 15px; align-items: flex-start; border: 2px solid #0057d9; border-radius: 12px; padding: 15px; margin: 10px 0; background: #f8fbff;}
+        .selected-product img { width: 80px; height: 80px; object-fit: contain; border-radius: 8px; border: 1px solid #eee; background: white;}
+        .selected-info { flex: 1; }
+        .selected-title { font-size: 18px; margin-bottom: 5px; color: #333; }
+        .selected-vendor { font-size: 14px; color: #666; margin-bottom: 3px; }
+        .selected-price { font-size: 16px; font-weight: bold; color: #0057d9; margin-bottom: 8px; }
+        .selected-description { font-size: 13px; color: #777; line-height: 1.4; margin-bottom: 12px; }
+        .selected-actions { display: flex; gap: 8px; }
+        .selected-product .clear-btn { font-size: 18px; padding: 5px 10px;}
         .modal-backdrop { position: fixed; inset: 0; background: rgba(48,53,67,0.18); z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .modal { background: #fff; border-radius: 12px; padding: 25px 20px 20px 20px; width: 80vw; height: 80vh; box-shadow: 0 3px 32px #aaa7, 0 1.5px 4px #0001; position: relative; display: flex; flex-direction: column; }
         .close-modal { position: absolute; right: 11px; top: 10px; font-size: 24px; border: none; background: none; cursor: pointer; color: #888;}
@@ -200,8 +291,7 @@
   customElements.define('shopify-product-picker', ShopifyProductPicker);
 </script>
 
-<!-- Place this where you want the picker: -->
-<shopify-product-picker ></shopify-product-picker>
-
-
 ]]#
+
+<!-- Place this where you want the picker: -->
+<shopify-product-picker contentField="${field.velocityVarName}"></shopify-product-picker>

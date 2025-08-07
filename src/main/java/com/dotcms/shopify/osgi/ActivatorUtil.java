@@ -187,6 +187,11 @@ public class ActivatorUtil {
 
   }
 
+  String[] fieldUUIDs = new String[]{"87ae3b42-4822-4ba8-b87c-258155f7012a", "97a69459-e0aa-4278-bfd8-5797ab59e9db",
+      "f92e8cb0-1f95-4935-8782-92b62fc84001"};
+
+
+
 
   /**
    * Automatically creates a content type with all the custom fields for testing
@@ -214,20 +219,22 @@ public class ActivatorUtil {
     LinkedHashMap<String, Field> fieldMap = new LinkedHashMap<>(type.fieldMap());
     fieldMap.put("title", ImmutableTextField.builder()
         .name("Title")
-        .id(UUIDGenerator.generateUuid())
+        .id(fieldUUIDs[0])
         .contentTypeId(type.id())
         .variable("title")
         .indexed(true)
+        .sortOrder(0)
         .searchable(true)
         .listed(true)
         .build());
 
     fieldMap.put("shopifyProduct", ImmutableCustomField.builder()
         .name("Shopify Product")
-        .id(UUIDGenerator.generateUuid())
+        .id(fieldUUIDs[1])
         .contentTypeId(type.id())
         .variable("shopifyProduct")
         .indexed(true)
+        .sortOrder(1)
         .searchable(true)
         .listed(false)
         .values("#dotParse(\"/application/shopify/vtl/shopify-product-picker-custom-field.vtl\")\n")
@@ -235,10 +242,11 @@ public class ActivatorUtil {
 
     fieldMap.put("shopifyCollection", ImmutableCustomField.builder()
         .name("Shopify Collection")
-        .id(UUIDGenerator.generateUuid())
+        .id(fieldUUIDs[2])
         .contentTypeId(type.id())
         .variable("shopifyCollection")
         .indexed(true)
+        .sortOrder(2)
         .searchable(true)
         .listed(false)
         .values("#dotParse(\"/application/shopify/vtl/shopify-collection-picker-custom-field.vtl\")\n")

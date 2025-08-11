@@ -229,8 +229,8 @@ public class ShopifyService {
     Map<String, Object> variables = new HashMap<>();
     variables.put("id", productId);
 
-    return executeGraphQLQuery(query, variables);
-    //return extractDataField(response, "product");
+    Map<String, Object> response = executeGraphQLQuery(query, variables);
+    return extractDataField(response, "product");
   }
 
   /**

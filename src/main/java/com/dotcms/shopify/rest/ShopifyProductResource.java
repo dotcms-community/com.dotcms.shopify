@@ -13,10 +13,8 @@ import java.io.Serializable;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -24,38 +22,40 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 @Path("/v1/shopify")
-public class ShopifyResource implements Serializable {
+public class ShopifyProductResource implements Serializable {
 
   private static final long serialVersionUID = 204840922704940654L;
 
 
   @GET
-  @Path("/product/{id}")
+  @Path("/product/")
   @NoCache
   @Produces(MediaType.APPLICATION_JSON)
-  public final Response getStats(
-      @Context final HttpServletRequest request,
+  public final Response byId(@Context final HttpServletRequest request,
       @Context final HttpServletResponse response,
-      @PathParam("id") String id) {
-
-    final User user = new WebResource.InitBuilder(request, response).rejectWhenNoUser(true)
-        .requiredFrontendUser(true).init().getUser();
+      @QueryParam("id") String id) {
 
 
-    return Response.ok().build();
 
+
+    return searchProducts(request, response, null, null, 1, null, id, null);
   }
+
+
+
+
 
   @GET
   @Path("/product/_search")
   @NoCache
   @Produces(MediaType.APPLICATION_JSON)
-  public final Response purgeCache(@Context final HttpServletRequest request,
+  public final Response searchProducts(@Context final HttpServletRequest request,
       @Context final HttpServletResponse response,
       @QueryParam("searchTerm") String searchTerm,
       @QueryParam("hostName") String hostName,
       @QueryParam("limit") int limit,
       @QueryParam("cursor") String cursor,
+      @QueryParam("id") String id,
       @QueryParam("beforeAfter") String beforeAfter) {
 
     final User user = new WebResource.InitBuilder(request, response)
@@ -71,13 +71,14 @@ public class ShopifyResource implements Serializable {
         .hostName(hostName)
         .limit(limit)
         .cursor(cursor)
+        .id(id)
         .beforeAfter(beforeAfter)
         .build();
 
 
 
-    if (searchForm.searchTerm == null) {
-      return Response.ok(Map.of("errors", "No search term passed in")).build();
+    if (searchForm.searchTerm == null && UtilMethods.isEmpty(searchForm.id)) {
+      return Response.ok(Map.of("errors", "No searchTerm or id passed in")).build();
     }
 
     Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
@@ -88,6 +89,10 @@ public class ShopifyResource implements Serializable {
 
     ShopifyAPI api = ShopifyAPI.api(host);
 
+
+    if(UtilMethods.isSet(searchForm.id)){
+      return Response.ok(api.productById(searchForm.id)).build();
+    }
 
     if(UtilMethods.isEmpty(cursor)){
       return Response.ok(api.searchProducts(searchForm.searchTerm, searchForm.limit)).build();

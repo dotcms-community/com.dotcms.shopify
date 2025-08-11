@@ -1,0 +1,21 @@
+query GetProduct($id: ID!) {
+  product(id: $id) {
+    ...ProductFields
+    variants(first: 250) {
+      edges {
+        cursor
+        node {
+          ...VariantFields
+        }
+      }
+    }
+  }
+}
+
+# storefrontAPI 2025-07
+fragment ProductFields on Product {
+$product.fragment.gql
+}
+fragment VariantFields on ProductVariant {
+$variant.fragment.gql
+}

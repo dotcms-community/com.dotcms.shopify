@@ -1,0 +1,15 @@
+query searchProducts($query: String!, $limit: Int!, $cursor: String!) {
+    products(
+      query: $query
+      last: $limit
+      sortKey: RELEVANCE
+      before: $cursor
+    ) {
+      edges {
+        cursor
+        node {
+          $product.fragment.gql
+        }
+      }
+    }
+  }

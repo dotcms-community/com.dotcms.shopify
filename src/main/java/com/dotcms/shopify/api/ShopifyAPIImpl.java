@@ -44,7 +44,7 @@ public class ShopifyAPIImpl implements ShopifyAPI {
       return Map.of("errors", "no id provided ");
     }
 
-    if (!id.startsWith("gid://")) {
+    if (!id.startsWith("gid://shopify/Product/")) {
       id = "gid://shopify/Product/" + id;
     }
 

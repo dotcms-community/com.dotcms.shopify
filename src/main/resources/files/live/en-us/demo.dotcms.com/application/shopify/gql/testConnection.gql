@@ -1,0 +1,10 @@
+# storefrontAPI 2025-07
+query ShopName {
+  shop {
+    name
+    id
+    primaryDomain{
+      host
+    }
+  }
+}

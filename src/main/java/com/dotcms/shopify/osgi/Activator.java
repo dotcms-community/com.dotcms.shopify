@@ -10,7 +10,7 @@ import com.dotcms.shopify.api.ShopifyAPI;
 import com.dotcms.shopify.listener.ShopifyAppListener;
 import com.dotcms.shopify.listener.ShopifyContentListener;
 import com.dotcms.shopify.rest.ShopifyInterceptor;
-import com.dotcms.shopify.rest.ShopifyResource;
+import com.dotcms.shopify.rest.ShopifyProductResource;
 import com.dotcms.shopify.util.ShopifyApp;
 import com.dotcms.shopify.viewtool.DotShopifyToolInfo;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -66,7 +66,7 @@ public class Activator extends GenericBundleActivator {
     activatorUtil.createShopifyExampleContentType();
 
     // this should be done last in case the bundle fails to start
-    RestServiceUtil.addResource(ShopifyResource.class);
+    RestServiceUtil.addResource(ShopifyProductResource.class);
 
     DotConcurrentFactory.getInstance().getSubmitter().submit(() -> ShopifyAPI.api(APILocator.systemHost()).reload(), 10,
         TimeUnit.SECONDS);
@@ -96,7 +96,7 @@ public class Activator extends GenericBundleActivator {
     localSystemEventsAPI.unsubscribe(shopifyContentListener);
     localSystemEventsAPI.unsubscribe(shopifyAppListener);
 
-    RestServiceUtil.removeResource(ShopifyResource.class);
+    RestServiceUtil.removeResource(ShopifyProductResource.class);
 
     Logger.info(Activator.class.getName(), "Stopping Shopify Plugin");
 

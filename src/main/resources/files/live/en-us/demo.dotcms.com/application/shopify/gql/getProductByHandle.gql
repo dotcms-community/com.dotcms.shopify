@@ -1,0 +1,8 @@
+query getProducts($query: String!) {
+  edges {
+    cursor
+    node {
+      title
+    }
+  }
+}

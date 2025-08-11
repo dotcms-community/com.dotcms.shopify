@@ -1,3 +1,4 @@
+
 #[[
 
 <!-- shopify-product-picker.js -->
@@ -5,7 +6,7 @@
   class ShopifyProductPicker extends HTMLElement {
     constructor() {
       super();
-      this.attachShadow({mode: 'open'});
+      this.attachShadow({ mode: 'open' });
       this.selectedProductKey = 'selectedShopifyProduct';
       this.state = {
         selected: null,
@@ -15,7 +16,7 @@
         modalOpen: false,
         error: ''
       };
-      this.apiEndpoint = "/api/v1/shopify/product";
+      this.apiEndpoint = "/api/v1/shopify/product" ;
       this.isProcessingSelection = false; // Flag to prevent multiple simultaneous selections
     }
 
@@ -51,23 +52,18 @@
       }
     }
 
-    async loadSelectedFromContentField() {
+    loadSelectedFromContentField() {
       if (this.contentField) {
         const contentFieldElement = document.getElementById(this.contentField);
-        console.log('Loading from content field:', this.contentField, 'Element found:',
-            !!contentFieldElement);
+        console.log('Loading from content field:', this.contentField, 'Element found:', !!contentFieldElement);
         if (contentFieldElement && contentFieldElement.value) {
-          console.log('Content field value (product ID):', contentFieldElement.value);
-          const productId = contentFieldElement.value.trim();
-          if (productId) {
-            try {
-              await this.loadProductById(productId);
-              console.log('Loaded product by ID:', productId, this.state.selected);
-            } catch (e) {
-              console.warn('Failed to load product by ID:', productId, e);
-              // Clear invalid product ID
-              contentFieldElement.value = '';
-            }
+          console.log('Content field value:', contentFieldElement.value);
+          try {
+            this.state.selected = JSON.parse(contentFieldElement.value);
+            console.log('Parsed selected product:', this.state.selected);
+            this.render();
+          } catch (e) {
+            console.warn('Failed to parse content field value:', contentFieldElement.value, e);
           }
         } else {
           console.log('No content field value found');
@@ -75,34 +71,35 @@
       }
     }
 
+
+
     saveSelectedToContentField() {
 
       if (this.contentField && document.getElementById(this.contentField)) {
         const contentFieldElement = document.getElementById(this.contentField);
 
-        const value = this.state.selected ? this.state.selected.id : '';
-        contentFieldElement.value = value;
-        console.log('Updated hidden field:', this.contentField, 'with product ID:', value);
 
-        // Trigger a change event to notify form systems
-        contentFieldElement.dispatchEvent(new Event('change', {bubbles: true}));
+          const value = this.state.selected ? JSON.stringify(this.state.selected) : '';
+          contentFieldElement.value = value;
+          console.log('Updated hidden field:', this.contentField, 'with value:', value);
 
-      } else {
-        console.warn('Content field element not found:', this.contentField);
-      }
+
+          // Trigger a change event to notify form systems
+          contentFieldElement.dispatchEvent(new Event('change', { bubbles: true }));
+
+        } else {
+          console.warn('Content field element not found:', this.contentField);
+        }
     }
-
-    async loadProductById(productId) {
-      const resp = await fetch(`${this.apiEndpoint}?id=${productId}`);
-      if (!resp.ok) {
-        throw new Error(resp.statusText);
-      }
-      const data = await resp.json();
-
-      this.state.selected = data;
-      this.render();
-
+    
+    
+    async loadProductById(productId){
+        const resp = await fetch(`${this.apiEndpoint}${productId}`);
+        if (!resp.ok) throw new Error(resp.statusText);
+        const data = await resp.json();
+        this.state.selected = data;
     }
+    
 
     toggleModal(open) {
       this.state.modalOpen = open;
@@ -111,9 +108,7 @@
       this.state.error = '';
       this.state.searching = false;
       this.render();
-      if (open) {
-        this.shadowRoot.querySelector('.search-input').focus();
-      }
+      if (open) this.shadowRoot.querySelector('.search-input').focus();
     }
 
     async handleSearchInput(e) {
@@ -132,15 +127,11 @@
       try {
         // ⚡️ Update this to your actual API endpoint.
         const resp = await fetch(`${this.apiEndpoint}/_search?searchTerm=${query}&limit=10`);
-        if (!resp.ok) {
-          throw new Error(resp.statusText);
-        }
+        if (!resp.ok) throw new Error(resp.statusText);
         const data = await resp.json();
 
         this.state.results = data;
-        if (this.state.results.length === 0) {
-          this.state.error = 'No products found.';
-        }
+        if (this.state.results.length === 0) this.state.error = 'No products found.';
         this.state.searching = false;
         this.updateResults();
       } catch (error) {
@@ -149,7 +140,6 @@
         this.updateResults();
       }
     }
-
     updateResults() {
       const resultsContainer = this.shadowRoot.querySelector('.results');
       const errorContainer = this.shadowRoot.querySelector('.error');
@@ -184,17 +174,17 @@
         errorDiv.remove();
       }
     }
-
     selectProductFromResult(idx) {
 
+      
       // Prevent multiple simultaneous selections
       if (this.isProcessingSelection) {
         //console.log('Selection already in progress, ignoring duplicate call');
         return;
       }
-
+      
       this.isProcessingSelection = true;
-
+      
       const prod = this.state.results[idx];
       if (!prod) {
         console.warn('No product found at index:', idx);
@@ -205,11 +195,11 @@
       this.state.selected = prod;
       this.saveSelectedToContentField();
       this.toggleModal(false); // This already calls render()
-
+      
       this.dispatchEvent(
-          new CustomEvent('product-selected', {detail: prod, bubbles: true, composed: true})
+          new CustomEvent('product-selected', { detail: prod, bubbles: true, composed: true })
       );
-
+      
       // Reset the flag after a short delay to ensure all processing is complete
       setTimeout(() => {
         this.isProcessingSelection = false;
@@ -228,14 +218,12 @@
           ? `
         <div class="selected-product">
           <button class="clear-btn" title="Remove selection" onclick="this.getRootNode().host.clearSelected()">✕</button>
-          <img src="${prod.media && prod.media.edges && prod.media.edges[0]
-              ? prod.media.edges[0].node.previewImage.url : ''}" alt="${prod.title}" />
+          <img src="${prod.media && prod.media.edges && prod.media.edges[0] ? prod.media.edges[0].node.previewImage.url : ''}" alt="${prod.title}" />
           <div class="selected-info">
             <div class="selected-title"><b>${prod.title}</b></div>
             <div class="selected-vendor">${prod.vendor}</div>
             <div class="selected-price">$${prod.priceRange.minVariantPrice.amount}</div>
-            <div class="selected-description">${prod.description ? prod.description.slice(0, 255)
-              + '...' : ''}</div>
+            <div class="selected-description">${prod.description ? prod.description.slice(0, 255) + '...' : ''}</div>
             <div class="selected-actions">
               <button class="choose-btn dijitButton">Change Product</button>
             </div>
@@ -275,9 +263,7 @@
     }
 
     renderModal() {
-      if (!this.state.modalOpen) {
-        return '';
-      }
+      if (!this.state.modalOpen) return '';
       return `
         <div class="modal-backdrop">
           <div class="modal">

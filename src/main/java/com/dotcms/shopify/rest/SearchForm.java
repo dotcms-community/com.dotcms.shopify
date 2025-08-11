@@ -1,6 +1,7 @@
 package com.dotcms.shopify.rest;
 
 import com.dotcms.shopify.api.ShopifyAPI.BEFORE_AFTER;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -14,7 +15,7 @@ public class SearchForm {
   public final int limit;
   public final String cursor;
   public final String beforeAfter;
-
+  public final String id;
   private SearchForm(Builder builder) {
     searchTerm = builder.searchTerm;
     limit = builder.limit < 1
@@ -25,9 +26,10 @@ public class SearchForm {
     cursor = builder.cursor;
     beforeAfter = builder.beforeAfter;
     hostName = builder.hostName;
+    id = builder.id;
 
-    if (searchTerm == null || searchTerm.trim().isEmpty()) {
-      throw new IllegalArgumentException("searchTerm must be provided");
+    if (UtilMethods.isEmpty(id) && UtilMethods.isEmpty(searchTerm)) {
+      throw new IllegalArgumentException("searchTerm or id must be provided");
     }
 
     if (beforeAfter != null && !"BEFORE" .equalsIgnoreCase(beforeAfter) && !"AFTER" .equalsIgnoreCase(beforeAfter)) {
@@ -54,6 +56,9 @@ public class SearchForm {
 
     @JsonProperty
     private String hostName;
+
+    @JsonProperty
+    private String id;
 
     @JsonProperty
     private int limit = 10;
@@ -83,7 +88,10 @@ public class SearchForm {
       this.limit = limit;
       return this;
     }
-
+    public Builder id(final String id) {
+      this.id = id;
+      return this;
+    }
 
     public SearchForm build() {
       return new SearchForm(this);

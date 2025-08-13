@@ -22,86 +22,75 @@ import com.dotmarketing.util.Logger;
 import java.util.concurrent.TimeUnit;
 import org.osgi.framework.BundleContext;
 
-
 public class Activator extends GenericBundleActivator {
 
-  final WebInterceptorDelegate delegate =
-      FilterWebInterceptorProvider.getInstance(Config.CONTEXT).getDelegate(
-          InterceptorFilter.class);
-  final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+    final WebInterceptorDelegate delegate = FilterWebInterceptorProvider.getInstance(Config.CONTEXT).getDelegate(
+            InterceptorFilter.class);
+    final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 
-  private final WebInterceptor[] webInterceptors = {new ShopifyInterceptor()};
+    private final WebInterceptor[] webInterceptors = { new ShopifyInterceptor() };
 
-  private final ShopifyAppListener shopifyAppListener = new ShopifyAppListener();
+    private final ShopifyAppListener shopifyAppListener = new ShopifyAppListener();
 
-  private final ShopifyContentListener shopifyContentListener = new ShopifyContentListener();
+    private final ShopifyContentListener shopifyContentListener = new ShopifyContentListener();
 
+    public void start(final org.osgi.framework.BundleContext context) throws Exception {
 
+        Logger.info(Activator.class.getName(), "Starting Shopify Plugin");
 
-  public void start(final org.osgi.framework.BundleContext context) throws Exception {
+        ActivatorUtil activatorUtil = new ActivatorUtil();
+        this.initializeServices(context);
 
-    Logger.info(Activator.class.getName(), "Starting Shopify Plugin");
+        // Adding APP yaml
+        // Logger.info(Activator.class.getName(), "Copying dotCDN APP");
+        activatorUtil.copyAppYml();
 
-    ActivatorUtil activatorUtil = new ActivatorUtil();
-    this.initializeServices(context);
+        registerViewToolService(context, new DotShopifyToolInfo());
 
-    //Adding APP yaml
-    //Logger.info(Activator.class.getName(), "Copying dotCDN APP");
-    activatorUtil.copyAppYml();
+        // Register Receiver PP listener events.
+        localSystemEventsAPI.subscribe(shopifyContentListener);
+        localSystemEventsAPI.subscribe(AppSecretSavedEvent.class, new ShopifyAppListener());
 
+        activatorUtil.moveJarFilestoFileAssets("gql", ShopifyApp.GRAPHQL_QUERY_FILES_PATH);
+        activatorUtil.moveJarFilestoFileAssets("vtl", ShopifyApp.VTL_FILES_PATH);
 
+        activatorUtil.createShopifyExampleContentType();
 
+        // this should be done last in case the bundle fails to start
+        RestServiceUtil.addResource(ShopifyProductResource.class);
 
-    registerViewToolService( context, new DotShopifyToolInfo() );
-
-
-
-    //Register Receiver PP listener events.
-    localSystemEventsAPI.subscribe(shopifyContentListener);
-    localSystemEventsAPI.subscribe(AppSecretSavedEvent.class, new ShopifyAppListener());
-
-    activatorUtil.moveJarFilestoFileAssets("graphql", ShopifyApp.GRAPHQL_QUERY_FILES_PATH);
-    activatorUtil.moveJarFilestoFileAssets("vtl", "/application/shopify/vtl");
-
-    activatorUtil.createShopifyExampleContentType();
-
-    // this should be done last in case the bundle fails to start
-    RestServiceUtil.addResource(ShopifyProductResource.class);
-
-    DotConcurrentFactory.getInstance().getSubmitter().submit(() -> ShopifyAPI.api(APILocator.systemHost()).reload(), 10,
-        TimeUnit.SECONDS);
-  }
-
-
-  @Override
-  public void stop(BundleContext context) throws Exception {
-
-    // remove portlet, viewtool, actionlet
-    this.unregisterServices(context);
-  this.unregisterViewToolServices();
-    Logger.info(Activator.class.getName(), "Stopping Interceptor");
-    for (WebInterceptor webIn : webInterceptors) {
-      Logger.info(Activator.class.getName(), "Removing the " + webIn.getClass().getName());
-      delegate.remove(webIn.getName(), true);
+        DotConcurrentFactory.getInstance().getSubmitter().submit(() -> ShopifyAPI.api(APILocator.systemHost()).reload(),
+                10,
+                TimeUnit.SECONDS);
     }
 
-    final FilterWebInterceptorProvider filterWebInterceptorProvider =
-        FilterWebInterceptorProvider.getInstance(Config.CONTEXT);
+    @Override
+    public void stop(BundleContext context) throws Exception {
 
-    filterWebInterceptorProvider.getDelegate(InterceptorFilter.class);
+        // remove portlet, viewtool, actionlet
+        this.unregisterServices(context);
+        this.unregisterViewToolServices();
+        Logger.info(Activator.class.getName(), "Stopping Interceptor");
+        for (WebInterceptor webIn : webInterceptors) {
+            Logger.info(Activator.class.getName(), "Removing the " + webIn.getClass().getName());
+            delegate.remove(webIn.getName(), true);
+        }
 
-    Logger.info(Activator.class.getName(), "Removing Shopify APP");
-    new ActivatorUtil().deleteYml();
+        final FilterWebInterceptorProvider filterWebInterceptorProvider = FilterWebInterceptorProvider
+                .getInstance(Config.CONTEXT);
 
-    localSystemEventsAPI.unsubscribe(shopifyContentListener);
-    localSystemEventsAPI.unsubscribe(shopifyAppListener);
+        filterWebInterceptorProvider.getDelegate(InterceptorFilter.class);
 
-    RestServiceUtil.removeResource(ShopifyProductResource.class);
+        Logger.info(Activator.class.getName(), "Removing Shopify APP");
+        new ActivatorUtil().deleteYml();
 
-    Logger.info(Activator.class.getName(), "Stopping Shopify Plugin");
+        localSystemEventsAPI.unsubscribe(shopifyContentListener);
+        localSystemEventsAPI.unsubscribe(shopifyAppListener);
 
+        RestServiceUtil.removeResource(ShopifyProductResource.class);
 
-  }
+        Logger.info(Activator.class.getName(), "Stopping Shopify Plugin");
 
+    }
 
 }

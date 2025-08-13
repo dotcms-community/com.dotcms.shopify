@@ -3,6 +3,7 @@ target/
 .classpath
 .settings/
 .svn/
+.tmp/
 bin/
 # Intellij
 *.ipr
@@ -13,3 +14,4 @@ out/
 /bootstrap
 /dependencies.xml
 .java-version
+.dot-workspace.yml

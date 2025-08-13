@@ -30,11 +30,9 @@ public class ShopifyAPIImpl implements ShopifyAPI {
       return Map.of("errors", "no handle provided ");
     }
 
-
     return shopifyService.getProductByHandle(handle);
 
   }
-
 
 
   @Override
@@ -56,7 +54,7 @@ public class ShopifyAPIImpl implements ShopifyAPI {
   @Override
   public Map<String, Object> getProductByHandle(String handle) {
     Logger.info(this.getClass(), "Getting product by handle: " + handle + " for host: " + host.getHostname());
-    if(UtilMethods.isEmpty(handle)){
+    if (UtilMethods.isEmpty(handle)) {
       return Map.of("errors", "no handle provided ");
     }
 
@@ -90,14 +88,15 @@ public class ShopifyAPIImpl implements ShopifyAPI {
   }
 
   @Override
-  public List<Map<String, Object>> searchProducts(String query, int limit){
+  public List<Map<String, Object>> searchProducts(String query, int limit) {
     return shopifyService.searchProducts(query, limit);
 
 
   }
 
   @Override
-  public List<Map<String, Object>> searchProducts(String query, int limit, String cursor, BEFORE_AFTER beforeAfterCursor) {
+  public List<Map<String, Object>> searchProducts(String query, int limit, String cursor,
+      BEFORE_AFTER beforeAfterCursor) {
     Logger.info(this.getClass(), "Searching products with query: " + query + " for host: " + host.getHostname());
 
     // For pagination, we'll use null for the first page
@@ -110,7 +109,7 @@ public class ShopifyAPIImpl implements ShopifyAPI {
           "Pagination beyond first page not fully implemented. Returning first page results.");
     }
 
-    return shopifyService.searchProducts(query, limit,cursor,beforeAfterCursor);
+    return shopifyService.searchProducts(query, limit, cursor, beforeAfterCursor);
   }
 
   @Override
@@ -121,17 +120,15 @@ public class ShopifyAPIImpl implements ShopifyAPI {
     // In a real implementation, you'd need to manage cursors for proper pagination
     String after = null;
 
-
     return shopifyService.searchCollections(query, limit);
   }
 
   @Override
   public List<Map<String, Object>> searchCollections(String query, int limit, String cursor,
       BEFORE_AFTER beforeAfterCursor) {
-      return shopifyService.searchCollections(query, limit);
+    return shopifyService.searchCollections(query, limit);
 
   }
-
 
 
   @Override

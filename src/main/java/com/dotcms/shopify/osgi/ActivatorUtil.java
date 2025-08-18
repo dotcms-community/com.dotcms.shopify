@@ -3,8 +3,10 @@ package com.dotcms.shopify.osgi;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableColumnField;
 import com.dotcms.contenttype.model.field.ImmutableCustomField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableRowField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
@@ -191,7 +193,7 @@ public class ActivatorUtil {
     }
 
     String[] fieldUUIDs = new String[] { "87ae3b42-4822-4ba8-b87c-258155f7012a", "97a69459-e0aa-4278-bfd8-5797ab59e9db",
-            "f92e8cb0-1f95-4935-8782-92b62fc84001" };
+            "f92e8cb0-1f95-4935-8782-92b62fc84001","db87ccb0-1f95-4935-8782-92b62fc84034" };
 
     /**
      * Automatically creates a content type with all the custom fields for testing
@@ -217,13 +219,27 @@ public class ActivatorUtil {
         List<Field> fields = new ArrayList<>();
 
         LinkedHashMap<String, Field> fieldMap = new LinkedHashMap<>(type.fieldMap());
+
+        fieldMap.put("RowField00001", ImmutableRowField.builder()
+            .name("RowField00001")
+            .id(UUIDGenerator.generateUuid())
+            .sortOrder(0)
+            .variable("RowField00001")
+            .build());
+        fieldMap.put("ColumnField00001", ImmutableColumnField.builder()
+            .name("ColumnField00001")
+            .id(UUIDGenerator.generateUuid())
+            .sortOrder(10)
+            .variable("ColumnField00001")
+            .build());
+
         fieldMap.put("title", ImmutableTextField.builder()
                 .name("Title")
                 .id(fieldUUIDs[0])
                 .contentTypeId(type.id())
                 .variable("title")
                 .indexed(true)
-                .sortOrder(0)
+                .sortOrder(20)
                 .searchable(true)
                 .listed(true)
                 .build());
@@ -234,7 +250,7 @@ public class ActivatorUtil {
                 .contentTypeId(type.id())
                 .variable("shopifyProduct")
                 .indexed(true)
-                .sortOrder(1)
+                .sortOrder(31)
                 .searchable(true)
                 .listed(false)
                 .values("#dotParse(\"/application/shopify/vtl/shopify-product-picker-custom-field.vtl\")\n")
@@ -246,7 +262,7 @@ public class ActivatorUtil {
                 .contentTypeId(type.id())
                 .variable("shopifyCollection")
                 .indexed(true)
-                .sortOrder(2)
+                .sortOrder(42)
                 .searchable(true)
                 .listed(false)
                 .values("#dotParse(\"/application/shopify/vtl/shopify-collection-picker-custom-field.vtl\")\n")

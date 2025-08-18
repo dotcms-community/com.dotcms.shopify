@@ -62,6 +62,55 @@ public class ShopifyAPIImpl implements ShopifyAPI {
 
   }
 
+
+  @Override
+  public List<Map<String, Object>> searchProducts(String query, int limit) {
+    return this.searchProducts(query, limit, SortKey.RELEVANCE);
+
+  }
+
+
+  @Override
+  public List<Map<String, Object>> searchProducts(String query, int limit, SortKey sortKey) {
+
+    return shopifyService.searchProducts(ShopifySearcher.builder().query(query).limit(limit).sortKey(sortKey).build());
+
+
+  }
+
+
+  @Override
+  public List<Map<String, Object>> searchProducts(
+      String query,
+      int limit,
+      String cursor,
+      BEFORE_AFTER beforeAfterCursor,
+      SortKey sortKey,
+      boolean reverse) {
+
+    Logger.info(this.getClass(), "Searching products with query: " + query + " for host: " + host.getHostname());
+
+    ShopifySearcher searcher = ShopifySearcher.builder().query(query).cursor(cursor).before(beforeAfterCursor)
+        .reverse(reverse).limit(limit).sortKey(sortKey).build();
+
+    return shopifyService.searchProducts(searcher);
+
+  }
+
+
+  @Override
+  public List<Map<String, Object>> searchProducts(ShopifySearcher searcher) {
+    Logger.info(this.getClass(), "Searching products with query: " + searcher + " for host: " + host.getHostname());
+
+
+    return shopifyService.searchProducts(searcher);
+
+  }
+
+
+
+
+
   @Override
   public Map<String, Object> rawQuery(String query) {
     return this.rawQuery(query, Map.of());
@@ -87,30 +136,6 @@ public class ShopifyAPIImpl implements ShopifyAPI {
     return shopifyService.getCollectionById(collectionId);
   }
 
-  @Override
-  public List<Map<String, Object>> searchProducts(String query, int limit) {
-    return shopifyService.searchProducts(query, limit);
-
-
-  }
-
-  @Override
-  public List<Map<String, Object>> searchProducts(String query, int limit, String cursor,
-      BEFORE_AFTER beforeAfterCursor) {
-    Logger.info(this.getClass(), "Searching products with query: " + query + " for host: " + host.getHostname());
-
-    // For pagination, we'll use null for the first page
-    // In a real implementation, you'd need to manage cursors for proper pagination
-    String after = null;
-    if (beforeAfterCursor == BEFORE_AFTER.BEFORE) {
-
-      // This is simplified - in production you'd need to track cursors
-      Logger.warn(this.getClass(),
-          "Pagination beyond first page not fully implemented. Returning first page results.");
-    }
-
-    return shopifyService.searchProducts(query, limit, cursor, beforeAfterCursor);
-  }
 
   @Override
   public List<Map<String, Object>> searchCollections(String query, int limit) {
@@ -122,6 +147,18 @@ public class ShopifyAPIImpl implements ShopifyAPI {
 
     return shopifyService.searchCollections(query, limit);
   }
+
+  @Override
+  public List<Map<String, Object>> searchCollections(String query, int limit, String sortBy) {
+    Logger.info(this.getClass(), "Searching collections with query: " + query + " for host: " + host.getHostname());
+
+    // For pagination, we'll use null for the first page
+    // In a real implementation, you'd need to manage cursors for proper pagination
+    String after = null;
+
+    return shopifyService.searchCollections(query, limit);
+  }
+
 
   @Override
   public List<Map<String, Object>> searchCollections(String query, int limit, String cursor,

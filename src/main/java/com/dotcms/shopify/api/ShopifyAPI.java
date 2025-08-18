@@ -17,10 +17,17 @@ public interface ShopifyAPI {
 
   public Map<String, Object> productByHandle(String handle);
 
+
   public List<Map<String, Object>> searchProducts(String query, int limit);
 
+  public List<Map<String, Object>> searchProducts(ShopifySearcher searcher);
+
+  public List<Map<String, Object>> searchProducts(String query, int limit,String sortBy);
+
+  List<Map<String, Object>> searchProducts(String query, int limit, SortKey sortKey);
+
   public List<Map<String, Object>> searchProducts(String query, int limit, String cursor,
-          BEFORE_AFTER beforeAfterCursor);
+          BEFORE_AFTER beforeAfterCursor,SortKey sortBy,boolean reverse);
 
   public Map<String, Object> collectionById(String id);
 

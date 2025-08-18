@@ -1,14 +1,15 @@
-query searchProducts($query: String!, $first: Int!) {
+query searchProducts($query: String!, $first: Int!,$sortKey: String!,$reverse: boolean!) {
     products(
-      query: $query
-      first: $first
-      sortKey: RELEVANCE
+        query: $query
+        first: $first
+        sortKey: $sortKey
+        reverse: $reverse
     ) {
-      edges {
-        cursor
-        node {
-          $product.fragment.gql
+        edges {
+            cursor
+            node {
+            $product.fragment.gql
         }
-      }
     }
-  }
+}
+}

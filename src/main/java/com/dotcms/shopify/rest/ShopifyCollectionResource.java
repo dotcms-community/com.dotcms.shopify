@@ -88,7 +88,7 @@ public class ShopifyCollectionResource implements Serializable {
         }
 
         return Response
-                .ok(api.searchProducts(searchForm.searchTerm, searchForm.limit, cursor, searchForm.getBeforeAfter()))
+                .ok()
                 .build();
 
     }

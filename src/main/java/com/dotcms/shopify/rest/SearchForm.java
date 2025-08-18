@@ -1,10 +1,11 @@
 package com.dotcms.shopify.rest;
 
 import com.dotcms.shopify.api.ShopifyAPI.BEFORE_AFTER;
+import com.dotcms.shopify.api.SortKey;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-
+import javax.validation.constraints.NotNull;
 
 
 @JsonDeserialize(builder = SearchForm.Builder.class)
@@ -16,6 +17,8 @@ public class SearchForm {
   public final String cursor;
   public final String beforeAfter;
   public final String id;
+  public final boolean reverse;
+  public final SortKey sortKey;
   private SearchForm(Builder builder) {
     searchTerm = builder.searchTerm;
     limit = builder.limit < 1
@@ -27,6 +30,8 @@ public class SearchForm {
     beforeAfter = builder.beforeAfter;
     hostName = builder.hostName;
     id = builder.id;
+    sortKey=builder.sortKey;
+    reverse = builder.reverse;
 
     if (UtilMethods.isEmpty(id) && UtilMethods.isEmpty(searchTerm)) {
       throw new IllegalArgumentException("searchTerm or id must be provided");
@@ -61,6 +66,12 @@ public class SearchForm {
     private String id;
 
     @JsonProperty
+    private boolean reverse = false;
+
+    @JsonProperty
+    private SortKey sortKey = SortKey.RELEVANCE;
+
+    @JsonProperty
     private int limit = 10;
 
 
@@ -92,6 +103,22 @@ public class SearchForm {
       this.id = id;
       return this;
     }
+
+    public Builder sortKey(final SortKey  sortKey) {
+      this.sortKey = sortKey !=null ? sortKey : SortKey.RELEVANCE;
+      return this;
+    }
+
+    public Builder sortKey(final String sortKey) {
+      this.sortKey = SortKey.valueOf(sortKey.toUpperCase());
+      return this;
+    }
+
+    public Builder reverse(final boolean reverse) {
+      this.reverse = reverse;
+      return this;
+    }
+
 
     public SearchForm build() {
       return new SearchForm(this);

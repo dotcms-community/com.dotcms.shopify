@@ -62,12 +62,12 @@ public class ShopifyService {
       cacheMap = (Map<String, String>) cache.get(CacheType.GRAPHQL, "FRAGMENT_MAP");
       if (cacheMap == null) {
         Map<String, String> fragmentMap = new HashMap<>();
-        List<String> fragmentNames = ActivatorUtil.listFilesInPackage("graphql");
+        List<String> fragmentNames = ActivatorUtil.listFilesInPackage("gql");
         fragmentNames
             .stream()
             .filter(n -> n.contains("fragment.gql"))
             .forEach(fragmentPath -> {
-              String fragmentName = fragmentPath.replaceAll("graphql/", "");
+              String fragmentName = fragmentPath.replaceAll("gql/", "");
               String query = loadQueryFromFileasset(fragmentName);
               fragmentMap.put(fragmentName, query);
             });
@@ -236,41 +236,58 @@ public class ShopifyService {
   /**
    * Search products using GraphQL
    *
-   * @param searchQuery The search query
-   * @param limit       Number of products to return
+   * @param searcher
    * @return List of products
    */
-  public List<Map<String, Object>> searchProducts(String searchQuery, int limit) {
-    String query = loadQueryFromFileasset("searchProducts.gql");
-    if (query.isEmpty()) {
-      Logger.error(this, "Failed to load searchProducts query");
-      return Collections.emptyList();
+  public List<Map<String, Object>> searchProducts(ShopifySearcher searcher) {
+
+    if(searcher.hasCursor()){
+      String query = searcher.before == BEFORE_AFTER.BEFORE
+          ? loadQueryFromFileasset("searchProductsBefore.gql")
+          : loadQueryFromFileasset("searchProductsAfter.gql");
+
+      if (query.isEmpty()) {
+        Logger.error(this, "Failed to load searchProducts query");
+        return Collections.emptyList();
+      }
+
+      Map<String, Object> variables = new HashMap<>();
+      variables.put("query", searcher.query);
+      variables.put("first", searcher.limit);
+      variables.put("cursor", searcher.cursor);
+
+      Map<String, Object> response = executeGraphQLQuery(query, variables);
+      return extractProductList(response);
+
+
+    }else{
+      String query = loadQueryFromFileasset("searchProducts.gql");
+      if (query.isEmpty()) {
+        Logger.error(this, "Failed to load searchProducts query");
+        return Collections.emptyList();
+      }
+
+      Map<String, Object> variables = new HashMap<>();
+      variables.put("query", searcher.query);
+      variables.put("first", searcher.limit);
+      variables.put("sortKey", searcher.sortKey.name());
+      variables.put("reverse", searcher.reverse);
+
+      Map<String, Object> response = executeGraphQLQuery(query, variables);
+      return extractProductList(response);
+
     }
 
-    Map<String, Object> variables = new HashMap<>();
-    variables.put("query", searchQuery);
-    variables.put("first", limit);
 
-    Map<String, Object> response = executeGraphQLQuery(query, variables);
-    return extractProductList(response);
+
+
+
   }
 
 
   public List<Map<String, Object>> searchProducts(String searchQuery, int limit, String cursor, BEFORE_AFTER beforeAfter) {
 
-    String query = beforeAfter== BEFORE_AFTER.BEFORE ? loadQueryFromFileasset("searchProductsBefore.gql") : loadQueryFromFileasset("searchProductsAfter.gql");
-    if (query.isEmpty()) {
-      Logger.error(this, "Failed to load searchProducts query");
-      return Collections.emptyList();
-    }
 
-    Map<String, Object> variables = new HashMap<>();
-    variables.put("query", searchQuery);
-    variables.put("limit", limit);
-    variables.put("cursor", cursor);
-
-    Map<String, Object> response = executeGraphQLQuery(query, variables);
-    return extractProductList(response);
 
 
   }
@@ -305,7 +322,7 @@ public class ShopifyService {
    * @param after       Cursor for pagination
    * @return List of collections
    */
-  public List<Map<String, Object>> searchCollections(String searchQuery, int limit) {
+  public List<Map<String, Object>> searchCollections(String searchQuery, int limit,SortKey sortKey) {
     String query = loadQueryFromFileasset("searchCollections.gql");
     if (query.isEmpty()) {
       Logger.error(this, "Failed to load searchCollections query");
@@ -315,7 +332,7 @@ public class ShopifyService {
     Map<String, Object> variables = new HashMap<>();
     variables.put("query", searchQuery);
     variables.put("first", limit);
-
+    variables.put("sortKey", sortKey.name());
     Map<String, Object> response = executeGraphQLQuery(query, variables);
     return extractCollectionList(response);
   }

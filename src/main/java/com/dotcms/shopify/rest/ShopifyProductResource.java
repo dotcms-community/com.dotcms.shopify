@@ -3,6 +3,7 @@ package com.dotcms.shopify.rest;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.shopify.api.ShopifyAPI;
+import com.dotcms.shopify.api.SortKey;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -56,7 +57,9 @@ public class ShopifyProductResource implements Serializable {
       @QueryParam("limit") int limit,
       @QueryParam("cursor") String cursor,
       @QueryParam("id") String id,
-      @QueryParam("beforeAfter") String beforeAfter) {
+      @QueryParam("beforeAfter") String beforeAfter,
+      @QueryParam("sortKey") String sortKey) {
+
 
     final User user = new WebResource.InitBuilder(request, response)
         .rejectWhenNoUser(true)
@@ -99,7 +102,8 @@ public class ShopifyProductResource implements Serializable {
     }
 
 
-    return Response.ok(api.searchProducts(searchForm.searchTerm,searchForm.limit,cursor,searchForm.getBeforeAfter())).build();
+    return Response.ok(api.searchProducts(searchForm.searchTerm,searchForm.limit,cursor,searchForm.getBeforeAfter(),
+        SortKey.RELEVANCE),).build();
 
 
 

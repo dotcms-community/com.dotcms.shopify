@@ -20,20 +20,15 @@ public interface ShopifyAPI {
 
   public List<Map<String, Object>> searchProducts(String query, int limit);
 
-  public List<Map<String, Object>> searchProducts(ShopifySearcher searcher);
-
-  public List<Map<String, Object>> searchProducts(String query, int limit,String sortBy);
+  public List<Map<String, Object>> searchProducts(ProductSearcher searcher);
 
   List<Map<String, Object>> searchProducts(String query, int limit, SortKey sortKey);
 
-  public List<Map<String, Object>> searchProducts(String query, int limit, String cursor,
-          BEFORE_AFTER beforeAfterCursor,SortKey sortBy,boolean reverse);
 
   public Map<String, Object> collectionById(String id);
 
   public List<Map<String, Object>> searchCollections(String query, int limit);
 
-  Map<String, Object> getProductByHandle(String handle);
 
   public Map<String, Object> rawQuery(String query);
 
@@ -43,8 +38,8 @@ public interface ShopifyAPI {
     CacheLocator.getCacheAdministrator().flushGroup(ShopifyCache.getInstance().getPrimaryGroup());
   }
 
-  List<Map<String, Object>> searchCollections(String query, int limit, String cursor,
-      BEFORE_AFTER beforeAfterCursor);
+
+  List<Map<String, Object>> searchCollections(String query, int limit, SortKey sortKey);
 
   Map<String, Object> testConnection();
 

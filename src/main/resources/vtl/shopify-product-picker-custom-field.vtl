@@ -175,7 +175,7 @@
 
             try {
                 // ⚡️ Update this to your actual API endpoint.
-                const resp = await fetch(`${this.apiEndpoint}/_search?searchTerm=${query}&limit=10`);
+                const resp = await fetch(`${this.apiEndpoint}/_search?query=${query}&limit=20`);
                 if (!resp.ok) {
                     throw new Error(resp.statusText);
                 }

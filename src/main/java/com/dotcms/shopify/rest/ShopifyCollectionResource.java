@@ -57,35 +57,7 @@ public class ShopifyCollectionResource implements Serializable {
                 .init()
                 .getUser();
 
-        SearchForm searchForm = new SearchForm.Builder()
-                .searchTerm(searchTerm)
-                .hostName(hostName)
-                .limit(limit)
-                .cursor(cursor)
-                .id(id)
-                .beforeAfter(beforeAfter)
-                .build();
 
-        if (searchForm.searchTerm == null && UtilMethods.isEmpty(searchForm.id)) {
-            return Response.ok(Map.of("errors", "No searchTerm or id passed in")).build();
-        }
-
-        Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-
-        Host host = searchForm.hostName != null
-                ? Try.of(() -> APILocator.getHostAPI().resolveHostName(searchForm.hostName, user, true))
-                        .getOrElse(currentHost)
-                : currentHost;
-
-        ShopifyAPI api = ShopifyAPI.api(host);
-
-        if (UtilMethods.isSet(searchForm.id)) {
-            return Response.ok(api.productById(searchForm.id)).build();
-        }
-
-        if (UtilMethods.isEmpty(cursor)) {
-            return Response.ok(api.searchCollections(searchForm.searchTerm, searchForm.limit)).build();
-        }
 
         return Response
                 .ok()

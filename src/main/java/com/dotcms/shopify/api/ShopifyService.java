@@ -156,6 +156,9 @@ public class ShopifyService {
         requestBody.put("variables", variables);
       }
 
+
+      System.out.println("graph:" + requestBody.toString());
+
       // Create the HTTP request
       HttpRequest request = HttpRequest.newBuilder()
           .uri(URI.create(url))
@@ -171,6 +174,10 @@ public class ShopifyService {
       Map<String, List<String>> headers = response.headers().map();
       if (response.statusCode() == 200) {
         String responseBody = response.body();
+
+
+
+
         JSONObject jsonResponse =  new JSONObject(responseBody);
         return jsonResponse.has("data") && ! jsonResponse.has("errors") ? jsonResponse.getJSONObject("data") : parseGraphQLResponse(responseBody);
       } else {
@@ -239,7 +246,7 @@ public class ShopifyService {
    * @param searcher
    * @return List of products
    */
-  public List<Map<String, Object>> searchProducts(ShopifySearcher searcher) {
+  public List<Map<String, Object>> searchProducts(ProductSearcher searcher) {
 
     if(searcher.hasCursor()){
       String query = searcher.before == BEFORE_AFTER.BEFORE
@@ -271,7 +278,7 @@ public class ShopifyService {
       variables.put("query", searcher.query);
       variables.put("first", searcher.limit);
       variables.put("sortKey", searcher.sortKey.name());
-      variables.put("reverse", searcher.reverse);
+
 
       Map<String, Object> response = executeGraphQLQuery(query, variables);
       return extractProductList(response);
@@ -283,15 +290,6 @@ public class ShopifyService {
 
 
   }
-
-
-  public List<Map<String, Object>> searchProducts(String searchQuery, int limit, String cursor, BEFORE_AFTER beforeAfter) {
-
-
-
-
-  }
-
 
 
   /**
@@ -315,12 +313,11 @@ public class ShopifyService {
   }
 
   /**
-   * Search collections using GraphQL
    *
-   * @param searchQuery The search query
-   * @param limit       Number of collections to return
-   * @param after       Cursor for pagination
-   * @return List of collections
+   * @param searchQuery
+   * @param limit
+   * @param sortKey
+   * @return
    */
   public List<Map<String, Object>> searchCollections(String searchQuery, int limit,SortKey sortKey) {
     String query = loadQueryFromFileasset("searchCollections.gql");

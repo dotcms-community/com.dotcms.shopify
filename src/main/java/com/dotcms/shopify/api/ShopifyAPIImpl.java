@@ -11,7 +11,6 @@ public class ShopifyAPIImpl implements ShopifyAPI {
   private final Host host;
   private final ShopifyService shopifyService;
 
-
   /**
    * Method to load the app secrets into the variables.
    *
@@ -34,7 +33,6 @@ public class ShopifyAPIImpl implements ShopifyAPI {
 
   }
 
-
   @Override
   public Map<String, Object> productById(String id) {
     Logger.info(this.getClass(), "Getting product by ID: " + id + " for host: " + host.getHostname());
@@ -46,22 +44,11 @@ public class ShopifyAPIImpl implements ShopifyAPI {
       id = "gid://shopify/Product/" + id;
     }
 
-    //long longId = Try.of(() -> Long.parseLong(id.replace("gid://shopify/Product/", ""))).getOrElse(0L);
+    // long longId = Try.of(() ->
+    // Long.parseLong(id.replace("gid://shopify/Product/", ""))).getOrElse(0L);
     return shopifyService.getProductById(id);
 
   }
-
-  @Override
-  public Map<String, Object> getProductByHandle(String handle) {
-    Logger.info(this.getClass(), "Getting product by handle: " + handle + " for host: " + host.getHostname());
-    if (UtilMethods.isEmpty(handle)) {
-      return Map.of("errors", "no handle provided ");
-    }
-
-    return shopifyService.getProductByHandle(handle);
-
-  }
-
 
   @Override
   public List<Map<String, Object>> searchProducts(String query, int limit) {
@@ -69,47 +56,21 @@ public class ShopifyAPIImpl implements ShopifyAPI {
 
   }
 
-
   @Override
   public List<Map<String, Object>> searchProducts(String query, int limit, SortKey sortKey) {
 
-    return shopifyService.searchProducts(ShopifySearcher.builder().query(query).limit(limit).sortKey(sortKey).build());
-
-
-  }
-
-
-  @Override
-  public List<Map<String, Object>> searchProducts(
-      String query,
-      int limit,
-      String cursor,
-      BEFORE_AFTER beforeAfterCursor,
-      SortKey sortKey,
-      boolean reverse) {
-
-    Logger.info(this.getClass(), "Searching products with query: " + query + " for host: " + host.getHostname());
-
-    ShopifySearcher searcher = ShopifySearcher.builder().query(query).cursor(cursor).before(beforeAfterCursor)
-        .reverse(reverse).limit(limit).sortKey(sortKey).build();
-
-    return shopifyService.searchProducts(searcher);
+    return shopifyService
+        .searchProducts(ProductSearcher.builder().query(query).limit(limit).sortKey(sortKey).build());
 
   }
 
-
   @Override
-  public List<Map<String, Object>> searchProducts(ShopifySearcher searcher) {
+  public List<Map<String, Object>> searchProducts(ProductSearcher searcher) {
     Logger.info(this.getClass(), "Searching products with query: " + searcher + " for host: " + host.getHostname());
 
-
     return shopifyService.searchProducts(searcher);
 
   }
-
-
-
-
 
   @Override
   public Map<String, Object> rawQuery(String query) {
@@ -136,7 +97,6 @@ public class ShopifyAPIImpl implements ShopifyAPI {
     return shopifyService.getCollectionById(collectionId);
   }
 
-
   @Override
   public List<Map<String, Object>> searchCollections(String query, int limit) {
     Logger.info(this.getClass(), "Searching collections with query: " + query + " for host: " + host.getHostname());
@@ -145,26 +105,18 @@ public class ShopifyAPIImpl implements ShopifyAPI {
     // In a real implementation, you'd need to manage cursors for proper pagination
     String after = null;
 
-    return shopifyService.searchCollections(query, limit);
+    return this.searchCollections(query, limit, SortKey.RELEVANCE);
   }
 
   @Override
-  public List<Map<String, Object>> searchCollections(String query, int limit, String sortBy) {
+  public List<Map<String, Object>> searchCollections(String query, int limit, SortKey sortKey) {
     Logger.info(this.getClass(), "Searching collections with query: " + query + " for host: " + host.getHostname());
 
     // For pagination, we'll use null for the first page
     // In a real implementation, you'd need to manage cursors for proper pagination
     String after = null;
 
-    return shopifyService.searchCollections(query, limit);
-  }
-
-
-  @Override
-  public List<Map<String, Object>> searchCollections(String query, int limit, String cursor,
-      BEFORE_AFTER beforeAfterCursor) {
-    return shopifyService.searchCollections(query, limit);
-
+    return shopifyService.searchCollections(query, limit, sortKey);
   }
 
 
@@ -172,6 +124,5 @@ public class ShopifyAPIImpl implements ShopifyAPI {
   public Map<String, Object> testConnection() {
     return shopifyService.testConnection();
   }
-
 
 }

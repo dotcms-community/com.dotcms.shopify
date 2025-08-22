@@ -126,10 +126,11 @@
             }
         }
 
+
         setNodeValue(nodeId, value) {
             let node = this.findNode(nodeId);
             let existingValue = this.getNodeValue(node);
-            if (existingValue && existingValue.trim.length() > 0) {
+            if (existingValue && existingValue.trim()!=="") {
                 return;
             }
             try {

@@ -2,8 +2,9 @@ package com.dotcms.shopify.api;
 
 import com.dotcms.shopify.api.ShopifyAPI.BEFORE_AFTER;
 import com.dotcms.shopify.osgi.ActivatorUtil;
+import com.dotcms.shopify.util.AppKey;
 import com.dotcms.shopify.util.ShopifyApp;
-import com.dotcms.shopify.util.ShopifyApp.AppKey;
+import com.dotcms.shopify.util.ShopifyApp;
 import com.dotcms.shopify.util.ShopifyCache;
 import com.dotcms.shopify.util.ShopifyCache.CacheType;
 import com.dotmarketing.beans.Host;

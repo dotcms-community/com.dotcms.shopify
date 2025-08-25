@@ -13,6 +13,12 @@
                 results: [],
                 searching: false,
                 error: "",
+                pageInfo: {
+                    hasNextPage: false,
+                    hasPreviousPage: false,
+                    startCursor: "",
+                    endCursor: "",
+                },
             };
             this.apiEndpoint = "/api/v1/shopify/product";
             this.isProcessingSelection = false; // Flag to prevent multiple simultaneous selections
@@ -147,9 +153,9 @@
             if (!resp.ok) {
                 throw new Error(resp.statusText);
             }
-            const data = await resp.json();
+            const json = await resp.json();
 
-            this.state.selected = data;
+            this.state.selected = json.data.product;
             this.render();
         }
 
@@ -159,6 +165,7 @@
             this.state.error = "";
             this.state.searching = false;
             this.render();
+            this.state.pageInfo = {}
         }
 
         async handleSearchInput(e) {
@@ -180,9 +187,16 @@
                 if (!resp.ok) {
                     throw new Error(resp.statusText);
                 }
-                const data = await resp.json();
+                const json = await resp.json();
+                console.log("json", json.data.products);
 
-                this.state.results = data;
+                this.state.pageInfo = json.data.products.pageInfo;
+                console.debug("pageInfo:", this.state.pageInfo)
+              let products = json.data.products.edges.map(function (val) {
+                return val.node;
+              })
+              console.debug("products", products);
+                this.state.results = products;
                 if (this.state.results.length === 0) {
                     this.state.error = "No products found.";
                 }
@@ -268,6 +282,7 @@
             }, 100);
         }
 
+
         clearSelected() {
             this.state.selected = null;
             this.saveSelectedToContentField();
@@ -287,6 +302,7 @@
             <div class="selected-title"><b>${prod.title}</b></div>
             <div class="selected-vendor">${prod.vendor}</div>
             <div class="selected-price">$${prod.priceRange.minVariantPrice.amount}</div>
+            <div class="link-to-product" style="margin-bottom: .5em"><a href="/api/v1/shopify/product/_redirect?id=${prod.id}" target="_blank">${prod.id}</a> ⤴</div>
             <div class="selected-description">${prod.description ? prod.description.slice(0, 255) + "..." : ""}</div>
           </div>
         </div>

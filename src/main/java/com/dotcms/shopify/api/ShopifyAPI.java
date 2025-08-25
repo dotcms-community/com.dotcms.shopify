@@ -7,51 +7,52 @@ import java.util.List;
 import java.util.Map;
 
 public interface ShopifyAPI {
+    public static final String SHOPIFY_PRODUCT_PREFIX = "gid://shopify/Product/";
+    public static final String SHOPIFY_COLLECTION_PREFIX = "gid://shopify/Collection/";
 
+    static ShopifyAPI api(Host host) {
+        return new ShopifyAPIImpl(host);
+    }
 
-  static ShopifyAPI api(Host host) {
-    return new ShopifyAPIImpl(host);
-  }
+    public Map<String, Object> productById(String id);
 
-  public Map<String, Object> productById(String id);
+    public Map<String, Object> productByHandle(String handle);
 
-  public Map<String, Object> productByHandle(String handle);
+    public Map<String, Object> searchProducts(String query, int limit);
 
+    public Map<String, Object> searchProducts(ProductSearcher searcher);
 
-  public List<Map<String, Object>> searchProducts(String query, int limit);
+    Map<String, Object> searchProducts(String query, int limit, SortKey sortKey);
 
-  public List<Map<String, Object>> searchProducts(ProductSearcher searcher);
+    public String linkToShopifyProduct(String productId);
 
-  List<Map<String, Object>> searchProducts(String query, int limit, SortKey sortKey);
+    public Map<String, Object> collectionById(String id);
 
+    public Map<String, Object> searchCollections(String query, int limit);
 
-  public Map<String, Object> collectionById(String id);
+    public Map<String, Object> rawQuery(String query);
 
-  public List<Map<String, Object>> searchCollections(String query, int limit);
+    public Map<String, Object> rawQuery(String query, Map<String, Object> variables);
 
+    public String getShopifyAdminUrl();
 
-  public Map<String, Object> rawQuery(String query);
+    default void reload() {
+        CacheLocator.getCacheAdministrator().flushGroup(ShopifyCache.getInstance().getPrimaryGroup());
+    }
 
-  public Map<String, Object> rawQuery(String query, Map<String, Object> variables);
+    Map<String, Object> searchCollections(String query, int limit, SortKey sortKey);
 
-  default void reload() {
-    CacheLocator.getCacheAdministrator().flushGroup(ShopifyCache.getInstance().getPrimaryGroup());
-  }
+    Map<String, Object> testConnection();
 
+    public enum BEFORE_AFTER {
+        BEFORE, AFTER
 
-  List<Map<String, Object>> searchCollections(String query, int limit, SortKey sortKey);
+    }
 
-  Map<String, Object> testConnection();
+    public enum SORT_ORDER {
+        ASC, DESC
+    }
 
-  public enum BEFORE_AFTER {
-    BEFORE, AFTER
-
-  }
-
-
-  public enum SORT_ORDER {
-    ASC, DESC
-  }
-
-  public enum SORT_KEY {}
+    public enum SORT_KEY {
+    }
 }

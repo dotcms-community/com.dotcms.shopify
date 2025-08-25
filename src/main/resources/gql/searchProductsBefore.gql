@@ -5,6 +5,12 @@ query searchProducts($query: String!, $limit: Int!, $cursor: String!) {
       sortKey: RELEVANCE
       before: $cursor
     ) {
+        pageInfo{
+            startCursor
+            endCursor
+            hasNextPage
+            hasPreviousPage
+        }
       edges {
         cursor
         node {

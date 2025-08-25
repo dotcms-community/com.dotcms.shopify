@@ -33,11 +33,11 @@ public class DotShopifyTool implements ViewTool {
     return api.get().productById(productId);
   }
 
-  public List<Map<String, Object>> searchProducts(String searchTerm, int limit) {
+  public Map<String, Object> searchProducts(String searchTerm, int limit) {
     return api.get().searchProducts(searchTerm, limit);
   }
 
-  public List<Map<String, Object>> searchProducts(String searchTerm, int limit, String cursor, String beforeOrAfter) {
+  public Map<String, Object> searchProducts(String searchTerm, int limit, String cursor, String beforeOrAfter) {
 
 
     ProductSearcher.Builder builder = new ProductSearcher.Builder().query(searchTerm).limit(limit).cursor(cursor);

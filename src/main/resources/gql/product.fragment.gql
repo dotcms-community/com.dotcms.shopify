@@ -1,4 +1,3 @@
-
     id
     title
     productType
@@ -34,14 +33,11 @@
                 alt
                 mediaContentType
                 previewImage {
-
                     altText
                     height
                     width
                     url
-
                 }
-
             }
         }
     }

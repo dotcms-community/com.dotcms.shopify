@@ -13,6 +13,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import io.vavr.control.Try;
@@ -158,7 +159,8 @@ public class ShopifyService {
       }
 
 
-      System.out.println("graph:" + requestBody.toString());
+      final String requestBodyString = requestBody.toString(2);
+
 
       // Create the HTTP request
       HttpRequest request = HttpRequest.newBuilder()
@@ -180,7 +182,25 @@ public class ShopifyService {
 
 
         JSONObject jsonResponse =  new JSONObject(responseBody);
-        return jsonResponse.has("data") && ! jsonResponse.has("errors") ? jsonResponse.getJSONObject("data") : parseGraphQLResponse(responseBody);
+
+
+        if(jsonResponse.has("errors")){
+          Logger.error(this, "GraphQL request failed");
+          Logger.error(this, "GraphQL request failed: Original Request: \n" + requestBodyString);
+
+          JSONArray errors = jsonResponse.optJSONArray("errors");
+
+          if(errors != null && errors.length() > 0){
+            for(int i = 0; i < errors.length(); i++){
+              Logger.error(this, "GraphQL request error:" + errors.getString(i));
+            }
+          }
+          return jsonResponse;
+        }
+
+
+
+        return  parseGraphQLResponse(responseBody);
       } else {
         Logger.error(this, "GraphQL request failed with status: " + response.statusCode() +
             ", body: " + response.body());
@@ -238,7 +258,7 @@ public class ShopifyService {
     variables.put("id", productId);
 
     Map<String, Object> response = executeGraphQLQuery(query, variables);
-    return extractDataField(response, "product");
+    return response;
   }
 
   /**
@@ -247,7 +267,7 @@ public class ShopifyService {
    * @param searcher
    * @return List of products
    */
-  public List<Map<String, Object>> searchProducts(ProductSearcher searcher) {
+  public Map<String, Object> searchProducts(ProductSearcher searcher) {
 
     if(searcher.hasCursor()){
       String query = searcher.before == BEFORE_AFTER.BEFORE
@@ -256,23 +276,23 @@ public class ShopifyService {
 
       if (query.isEmpty()) {
         Logger.error(this, "Failed to load searchProducts query");
-        return Collections.emptyList();
+        return Map.of("errors", "Failed to load searchProducts query");
       }
 
       Map<String, Object> variables = new HashMap<>();
       variables.put("query", searcher.query);
-      variables.put("first", searcher.limit);
+      variables.put("limit", searcher.limit);
       variables.put("cursor", searcher.cursor);
 
-      Map<String, Object> response = executeGraphQLQuery(query, variables);
-      return extractProductList(response);
+      return executeGraphQLQuery(query, variables);
+
 
 
     }else{
       String query = loadQueryFromFileasset("searchProducts.gql");
       if (query.isEmpty()) {
         Logger.error(this, "Failed to load searchProducts query");
-        return Collections.emptyList();
+        return Map.of("errors", "Failed to load searchProducts query");
       }
 
       Map<String, Object> variables = new HashMap<>();
@@ -282,7 +302,7 @@ public class ShopifyService {
 
 
       Map<String, Object> response = executeGraphQLQuery(query, variables);
-      return extractProductList(response);
+      return response;
 
     }
 
@@ -303,14 +323,14 @@ public class ShopifyService {
     String query = loadQueryFromFileasset("getCollectionById.gql");
     if (query.isEmpty()) {
       Logger.error(this, "Failed to load getCollectionById query");
-      return Collections.emptyMap();
+      return Map.of("errors", "Failed to load searchCollections query");
     }
 
     Map<String, Object> variables = new HashMap<>();
     variables.put("id", collectionId);
 
-    Map<String, Object> response = executeGraphQLQuery(query, variables);
-    return extractDataField(response, "collection");
+    return executeGraphQLQuery(query, variables);
+
   }
 
   /**
@@ -320,11 +340,11 @@ public class ShopifyService {
    * @param sortKey
    * @return
    */
-  public List<Map<String, Object>> searchCollections(String searchQuery, int limit,SortKey sortKey) {
+  public Map<String, Object> searchCollections(String searchQuery, int limit,SortKey sortKey) {
     String query = loadQueryFromFileasset("searchCollections.gql");
     if (query.isEmpty()) {
       Logger.error(this, "Failed to load searchCollections query");
-      return Collections.emptyList();
+      return Map.of("errors", "Failed to load searchCollections query");
     }
 
     Map<String, Object> variables = new HashMap<>();
@@ -332,7 +352,7 @@ public class ShopifyService {
     variables.put("first", limit);
     variables.put("sortKey", sortKey.name());
     Map<String, Object> response = executeGraphQLQuery(query, variables);
-    return extractCollectionList(response);
+    return response;
   }
 
   /**
@@ -359,65 +379,8 @@ public class ShopifyService {
     }
   }
 
-  /**
-   * Extract a specific data field from the GraphQL response
-   */
-  private Map<String, Object> extractDataField(Map<String, Object> data, String field) {
-    try {
-      if (data != null && data.containsKey(field)) {
-        return (Map<String, Object>) data.get(field);
-      }
-    } catch (Exception e) {
-      Logger.error(this, "Error extracting field: " + field, e);
-    }
-    return Collections.emptyMap();
-  }
 
-  /**
-   * Extract product list from GraphQL response
-   */
-  private List<Map<String, Object>> extractProductList(Map<String, Object> data) {
-    try {
-      if (data.containsKey("products")) {
-        Map<String, Object> products = (Map<String, Object>) data.get("products");
-        List<Map<String, Object>> edges = (List<Map<String, Object>>) products.get("edges");
-        if (edges != null) {
-          List<Map<String, Object>> productsToReturn = new ArrayList<>();
-          for (Map<String, Object> edge : edges) {
-            Map<String, Object> product = (Map<String, Object>) edge.get("node");
-            product.put("cursor", edge.get("cursor"));
-            productsToReturn.add(product);
-          }
-          return productsToReturn;
 
-        }
-      }
-    } catch (Exception e) {
-      Logger.error(this, "Error extracting product list", e);
-    }
-    return Collections.emptyList();
-  }
-
-  /**
-   * Extract collection list from GraphQL response
-   */
-  private List<Map<String, Object>> extractCollectionList(Map<String, Object> data) {
-    try {
-      if (data != null && data.containsKey("collections")) {
-        Map<String, Object> collections = (Map<String, Object>) data.get("collections");
-        List<Map<String, Object>> edges = (List<Map<String, Object>>) collections.get("edges");
-        if (edges != null) {
-          return edges.stream()
-              .map(edge -> (Map<String, Object>) edge.get("node"))
-              .filter(Objects::nonNull)
-              .collect(Collectors.toList());
-        }
-      }
-    } catch (Exception e) {
-      Logger.error(this, "Error extracting collection list", e);
-    }
-    return Collections.emptyList();
-  }
 
 
 }

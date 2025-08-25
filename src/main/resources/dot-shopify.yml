@@ -31,4 +31,4 @@ params:
     label: "Test Shopify Connection"
     hint: "This will open a new window and return the json for your store configuration. If the connection is good, you will see a `connection:success` key/value in the json."
     required: false
-    value: "/api/v1/shopify/test?host_id=${siteId}"
+    value: "/api/v1/shopify/product/test?host_id=${siteId}"

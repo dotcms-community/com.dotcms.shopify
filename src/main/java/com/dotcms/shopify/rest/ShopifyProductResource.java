@@ -9,10 +9,13 @@ import com.dotcms.shopify.api.SortKey;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.Serializable;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -25,13 +28,13 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-@Path("/v1/shopify")
+@Path("/v1/shopify/product")
 public class ShopifyProductResource implements Serializable {
 
     private static final long serialVersionUID = 204840922704940654L;
 
     @GET
-    @Path("/product/")
+    @Path("/")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public final Response byId(
@@ -60,7 +63,7 @@ public class ShopifyProductResource implements Serializable {
     }
 
     @GET
-    @Path("/product/_search")
+    @Path("/_search")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public final Response searchProducts(
@@ -122,6 +125,30 @@ public class ShopifyProductResource implements Serializable {
         Map<String, Object> responseMap = ShopifyAPI.api(host).testConnection();
 
         return Response.ok(responseMap).build();
+
+    }
+
+    @GET
+    @Path("/_redirect")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public final Response redirectToShopifyProduct(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response, @BeanParam final ProductSearchParams searchParams)
+            throws URISyntaxException {
+
+        final User user = new WebResource.InitBuilder(request, response).rejectWhenNoUser(true)
+                .requiredBackendUser(true)
+                .init().getUser();
+
+        if (UtilMethods.isEmpty(searchParams.id)) {
+            throw new DotRuntimeException("missing product Id");
+        }
+
+        Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+
+        String redirectUrl = ShopifyAPI.api(host).linkToShopifyProduct(searchParams.id);
+
+        return Response.status(Response.Status.FOUND).location(new URI(redirectUrl)).build();
 
     }
 

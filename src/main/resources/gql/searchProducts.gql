@@ -4,6 +4,14 @@ query searchProducts($query: String!, $first: Int!,$sortKey: ProductSortKeys!) {
         first: $first
         sortKey: $sortKey
     ) {
+        pageInfo{
+            startCursor
+            endCursor
+            hasNextPage
+            hasPreviousPage
+        }
+
+
         edges {
             cursor
             node {

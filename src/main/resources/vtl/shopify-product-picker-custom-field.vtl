@@ -24,7 +24,6 @@
             this.isProcessingSelection = false; // Flag to prevent multiple simultaneous selections
         }
 
-
         static get observedAttributes() {
             return ["contentfield"];
         }
@@ -132,11 +131,10 @@
             }
         }
 
-
         setNodeValue(nodeId, value) {
             let node = this.findNode(nodeId);
             let existingValue = this.getNodeValue(node);
-            if (existingValue && existingValue.trim()!=="") {
+            if (existingValue && existingValue.trim() !== "") {
                 return;
             }
             try {
@@ -165,25 +163,39 @@
             this.state.error = "";
             this.state.searching = false;
             this.render();
-            this.state.pageInfo = {}
+            this.state.pageInfo = {};
         }
 
         async handleSearchInput(e) {
-            console.log("e", e);
+            console.debug("e", e);
             const query = e.target.value;
             this.state.search = query;
             this.state.error = "";
             if (query.trim().length < 3) {
                 this.state.results = [];
+                this.state.pageInfo = {
+                    hasNextPage: false,
+                    hasPreviousPage: false,
+                    startCursor: "",
+                    endCursor: "",
+                };
                 this.updateResults();
                 return;
             }
+            await this.performSearch();
+        }
+
+        async performSearch(cursor = null, direction = "AFTER") {
             this.state.searching = true;
             this.updateResults();
 
             try {
-                // ⚡️ Update this to your actual API endpoint.
-                const resp = await fetch(`${this.apiEndpoint}/_search?query=${query}&limit=20`);
+                let url = `${this.apiEndpoint}/_search?query=${this.state.search}&limit=20`;
+                if (cursor) {
+                    url += `&cursor=${encodeURIComponent(cursor)}&before=${direction}`;
+                }
+
+                const resp = await fetch(url);
                 if (!resp.ok) {
                     throw new Error(resp.statusText);
                 }
@@ -191,11 +203,11 @@
                 console.log("json", json.data.products);
 
                 this.state.pageInfo = json.data.products.pageInfo;
-                console.debug("pageInfo:", this.state.pageInfo)
-              let products = json.data.products.edges.map(function (val) {
-                return val.node;
-              })
-              console.debug("products", products);
+                console.debug("pageInfo:", this.state.pageInfo);
+                let products = json.data.products.edges.map(function (val) {
+                    return val.node;
+                });
+                console.debug("products", products);
                 this.state.results = products;
                 if (this.state.results.length === 0) {
                     this.state.error = "No products found.";
@@ -209,9 +221,21 @@
             }
         }
 
+        async handleNextPage() {
+            if (this.state.pageInfo.hasNextPage && this.state.pageInfo.endCursor) {
+                await this.performSearch(this.state.pageInfo.endCursor, "AFTER");
+            }
+        }
+
+        async handlePreviousPage() {
+            if (this.state.pageInfo.hasPreviousPage && this.state.pageInfo.startCursor) {
+                await this.performSearch(this.state.pageInfo.startCursor, "BEFORE");
+            }
+        }
+
         updateResults() {
             const resultsContainer = this.shadowRoot.querySelector(".results");
-            const errorContainer = this.shadowRoot.querySelector(".error");
+            const paginationContainer = this.shadowRoot.querySelector(".pagination-container");
 
             if (resultsContainer) {
                 resultsContainer.innerHTML = this.state.searching
@@ -233,14 +257,18 @@
                           .join("");
             }
 
+            // Update pagination controls
+            if (paginationContainer) {
+                paginationContainer.innerHTML = this.renderPaginationControls();
+            }
+
             // Update error display
-            const searchContainer = this.shadowRoot.querySelector(".search-input").parentElement;
-            let errorDiv = searchContainer.querySelector(".error");
+            let errorDiv = this.shadowRoot.querySelector(".search-input").parentElement.querySelector(".error");
             if (this.state.error) {
                 if (!errorDiv) {
                     errorDiv = document.createElement("div");
                     errorDiv.className = "error";
-                    searchContainer.appendChild(errorDiv);
+                    this.shadowRoot.querySelector(".search-input").parentElement.appendChild(errorDiv);
                 }
                 errorDiv.textContent = this.state.error;
             } else if (errorDiv) {
@@ -282,7 +310,6 @@
             }, 100);
         }
 
-
         clearSelected() {
             this.state.selected = null;
             this.saveSelectedToContentField();
@@ -302,7 +329,9 @@
             <div class="selected-title"><b>${prod.title}</b></div>
             <div class="selected-vendor">${prod.vendor}</div>
             <div class="selected-price">$${prod.priceRange.minVariantPrice.amount}</div>
-            <div class="link-to-product" style="margin-bottom: .5em"><a href="/api/v1/shopify/product/_redirect?id=${prod.id}" target="_blank">${prod.id}</a> ⤴</div>
+            <div class="link-to-product" style="margin-bottom: .5em"><a href="/api/v1/shopify/product/_redirect?id=${
+                prod.id
+            }" target="_blank">${prod.id}</a> ⤴</div>
             <div class="selected-description">${prod.description ? prod.description.slice(0, 255) + "..." : ""}</div>
           </div>
         </div>
@@ -344,10 +373,41 @@
                         )
                         .join("")
           }
+
+        </div>
+        <div class="pagination-container">
+          ${this.renderPaginationControls()}
         </div>
       `;
         }
 
+        renderPaginationControls() {
+            if (!this.state.results.length || this.state.searching) {
+                return "";
+            }
+
+            const hasPrevious = this.state.pageInfo.hasPreviousPage;
+            const hasNext = this.state.pageInfo.hasNextPage;
+
+            if (!hasPrevious && !hasNext) {
+                return "";
+            }
+
+            return `
+        <div class="pagination-controls">
+          <button class="pagination-btn ${hasPrevious ? "" : "disabled"}" 
+                  ${hasPrevious ? "" : "disabled"} 
+                  onclick="this.getRootNode().host.handlePreviousPage()">
+            ← Previous
+          </button>
+          <button class="pagination-btn ${hasNext ? "" : "disabled"}" 
+                  ${hasNext ? "" : "disabled"} 
+                  onclick="this.getRootNode().host.handleNextPage()">
+            Next →
+          </button>
+        </div>
+      `;
+        }
 
         render() {
             this.shadowRoot.innerHTML = `
@@ -379,6 +439,10 @@
         .error { color: #ca2525; margin: 10px 0; }
         .spinner { width: 36px; height: 36px; border: 4px solid #bbb3; border-top: 4px solid #2299ff; border-radius: 50%; animation: spin 1s linear infinite; margin: 40px auto;}
         @keyframes spin { 100% { transform: rotate(360deg); } }
+        .pagination-controls { display: flex; justify-content: center; gap: 12px; margin-top: 15px; padding: 10px 0; border-top: 1px solid #eee; }
+        .pagination-btn { padding: 8px 16px; border: 1px solid #0057d9; background: #fff; color: #0057d9; cursor: pointer; border-radius: 6px; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+        .pagination-btn:hover:not(.disabled) { background: #0057d9; color: white; }
+        .pagination-btn.disabled { background: #f5f5f5; color: #ccc; border-color: #ddd; cursor: not-allowed; opacity: 0.6; }
         </style>
       <div class="product-search-root">
           ${this.renderSelected()}
@@ -393,10 +457,9 @@
     }
 
     customElements.define("shopify-product-picker", ShopifyProductPicker);
-
 </script>
 
 ]]#
-<!-- testing 123-->
+
 <!-- Place this where you want the picker: -->
 <shopify-product-picker contentField="${field.velocityVarName}"></shopify-product-picker>

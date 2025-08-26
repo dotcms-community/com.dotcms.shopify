@@ -3,7 +3,6 @@ package com.dotcms.shopify.api;
 import com.dotcms.shopify.util.ShopifyCache;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
-import java.util.List;
 import java.util.Map;
 
 public interface ShopifyAPI {
@@ -28,8 +27,6 @@ public interface ShopifyAPI {
 
     public Map<String, Object> collectionById(String id);
 
-    public Map<String, Object> searchCollections(String query, int limit);
-
     public Map<String, Object> rawQuery(String query);
 
     public Map<String, Object> rawQuery(String query, Map<String, Object> variables);
@@ -40,7 +37,9 @@ public interface ShopifyAPI {
         CacheLocator.getCacheAdministrator().flushGroup(ShopifyCache.getInstance().getPrimaryGroup());
     }
 
-    Map<String, Object> searchCollections(String query, int limit, SortKey sortKey);
+    Map<String, Object> searchCollections(ProductSearcher searcher);
+
+    public Map<String, Object> searchCollections(String query, int limit);
 
     Map<String, Object> testConnection();
 

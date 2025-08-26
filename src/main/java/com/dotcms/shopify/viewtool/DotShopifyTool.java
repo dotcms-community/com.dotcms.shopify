@@ -16,48 +16,44 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 
 public class DotShopifyTool implements ViewTool {
 
-  private HttpServletRequest request;
-  private Host host;
-  private User user;
+    private HttpServletRequest request;
+    private Host host;
+    private User user;
 
-  private Lazy<ShopifyAPI> api;
+    private Lazy<ShopifyAPI> api;
 
-  @Override
-  public void init(Object initData) {
-    this.request = ((ViewContext) initData).getRequest();
-    this.host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(this.request);
-    this.api = Lazy.of(() -> ShopifyAPI.api(host));
-  }
+    @Override
+    public void init(Object initData) {
+        this.request = ((ViewContext) initData).getRequest();
+        this.host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(this.request);
+        this.api = Lazy.of(() -> ShopifyAPI.api(host));
+    }
 
-  public Map<String, Object> getProduct(String productId) {
-    return api.get().productById(productId);
-  }
+    public Map<String, Object> getProduct(String productId) {
+        return api.get().productById(productId);
+    }
 
-  public Map<String, Object> searchProducts(String searchTerm, int limit) {
-    return api.get().searchProducts(searchTerm, limit);
-  }
+    public Map<String, Object> searchProducts(String searchTerm, int limit) {
+        return api.get().searchProducts(searchTerm, limit);
+    }
 
-  public Map<String, Object> searchProducts(String searchTerm, int limit, String cursor, String beforeOrAfter) {
+    public Map<String, Object> searchProducts(String searchTerm, int limit, String cursor, String beforeOrAfter) {
 
+        ProductSearcher.Builder builder = new ProductSearcher.Builder().query(searchTerm).limit(limit).cursor(cursor);
 
-    ProductSearcher.Builder builder = new ProductSearcher.Builder().query(searchTerm).limit(limit).cursor(cursor);
+        if ("BEFORE".equalsIgnoreCase(beforeOrAfter)) {
 
-    if ("AFTER".equalsIgnoreCase(beforeOrAfter)) {
+            builder.before(BEFORE_AFTER.BEFORE);
 
-      builder.before(BEFORE_AFTER.AFTER);
+        }
+
+        return api.get().searchProducts(builder.build());
 
     }
 
-    return api.get().searchProducts(builder.build());
+    public Map<String, Object> getProductByHandle(String handle) {
+        return api.get().productById(handle);
 
-  }
-
-
-  public Map<String, Object> getProductByHandle(String handle) {
-    return api.get().productById(handle);
-
-
-  }
-
+    }
 
 }

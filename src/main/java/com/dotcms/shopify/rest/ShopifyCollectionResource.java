@@ -2,67 +2,80 @@ package com.dotcms.shopify.rest;
 
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.shopify.api.ProductSearchParams;
 import com.dotcms.shopify.api.ShopifyAPI;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
-import io.vavr.control.Try;
 import java.io.Serializable;
-import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-@Path("/v1/shopify")
+@Path("/v1/shopify/collection")
 public class ShopifyCollectionResource implements Serializable {
 
-    private static final long serialVersionUID = 204840922704940654L;
+  private static final long serialVersionUID = 204840922704940654L;
 
-    @GET
-    @Path("/collection/")
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public final Response byId(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @QueryParam("id") String id) {
+  @GET
+  @Path("/")
+  @NoCache
+  @Produces(MediaType.APPLICATION_JSON)
+  public final Response byId(
+      @Context final HttpServletRequest request,
+      @Context final HttpServletResponse response,
+      @BeanParam final ProductSearchParams searchParams) {
 
-        return searchCollections(request, response, null, null, 1, null, id, null);
+    checkUser(request, response);
+
+    if (UtilMethods.isEmpty(searchParams.id)) {
+      return Response.status(404).build();
     }
 
-    @GET
-    @Path("/collection/_search")
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public final Response searchCollections(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @QueryParam("searchTerm") String searchTerm,
-            @QueryParam("hostName") String hostName,
-            @QueryParam("limit") int limit,
-            @QueryParam("cursor") String cursor,
-            @QueryParam("id") String id,
-            @QueryParam("beforeAfter") String beforeAfter) {
+    Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
 
-        final User user = new WebResource.InitBuilder(request, response)
-                .rejectWhenNoUser(true)
-                .requiredFrontendUser(true)
-                .requiredBackendUser(true)
-                .init()
-                .getUser();
+    ShopifyAPI api = ShopifyAPI.api(host);
 
+    return Response.ok(api.collectionById(searchParams.id)).build();
+  }
 
+  @GET
+  @Path("/_search")
+  @NoCache
+  @Produces(MediaType.APPLICATION_JSON)
+  public final Response searchCollections(
+      @Context final HttpServletRequest request,
+      @Context final HttpServletResponse response,
+      @BeanParam final ProductSearchParams searchParams) {
 
-        return Response
-                .ok()
-                .build();
+    checkUser(request, response);
 
+    if (UtilMethods.isEmpty(searchParams.query)) {
+      return Response.status(500, "Invalid argument").build();
     }
+
+    Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+    ShopifyAPI api = ShopifyAPI.api(host);
+    return Response
+        .ok(api.searchCollections(searchParams.toProductSearcher()))
+        .build();
+
+  }
+
+  private void checkUser(final HttpServletRequest request, final HttpServletResponse response) {
+    new WebResource.InitBuilder(request, response)
+        .rejectWhenNoUser(true)
+        .requiredFrontendUser(true)
+        .requiredBackendUser(true)
+        .init()
+        .getUser();
+
+  }
 
 }

@@ -1,31 +1,54 @@
-query searchCollections($query: String!, $first: Int!, $after: String) {
-  collections(first: $first, query: $query, after: $after) {
-      pageInfo{
-          startCursor
-          endCursor
-          hasNextPage
-          hasPreviousPage
-      }
-
-
-    edges {
-      node {
-        id
-        title
-        description
-        handle
-        updatedAt
-        image {
-          url
-          altText
+query searchCollections($query: String!, $first: Int!, $sortKey: CollectionSortKeys!) {
+    collections(first: $first, query: $query, sortKey: $sortKey) {
+        pageInfo {
+            startCursor
+            endCursor
+            hasNextPage
+            hasPreviousPage
         }
-        productsCount
-      }
-      cursor
+        edges {
+            node {
+                id
+                title
+                description
+                handle
+                updatedAt
+                products(first: 10) {
+                    edges {
+                        node {
+                            title
+                            productType
+                            description
+                            media(first: 1) {
+                                edges {
+                                    node {
+                                        preview {
+                                            image {
+                                                altText
+                                                height
+                                                url
+                                                width
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                image {
+                    url
+                    altText
+                    width
+                    height
+                }
+            }
+        }
+        pageInfo {
+            hasNextPage
+            hasPreviousPage
+            startCursor
+            endCursor
+        }
     }
-    pageInfo {
-      hasNextPage
-      endCursor
-    }
-  }
 }

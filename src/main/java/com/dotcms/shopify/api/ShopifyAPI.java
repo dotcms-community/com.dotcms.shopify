@@ -25,6 +25,8 @@ public interface ShopifyAPI {
 
     public String linkToShopifyProduct(String productId);
 
+    public String linkToShopifyCollection(String collectionId);
+
     public Map<String, Object> collectionById(String id);
 
     public Map<String, Object> rawQuery(String query);

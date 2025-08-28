@@ -104,6 +104,13 @@ public class ShopifyAPIImpl implements ShopifyAPI {
     }
 
     @Override
+    public String linkToShopifyCollection(String collectionId) {
+        String id = collectionId;
+        id = id.replace(SHOPIFY_COLLECTION_PREFIX, "");
+        return getShopifyAdminUrl() + "/collections/" + id;
+    }
+
+    @Override
     public Map<String, Object> collectionById(String id) {
         Logger.info(this.getClass(), "Getting collection by ID: " + id + " for host: " + host.getHostname());
 

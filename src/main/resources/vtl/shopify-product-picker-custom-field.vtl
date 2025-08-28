@@ -67,7 +67,7 @@
                     if (productId) {
                         try {
                             await this.loadProductById(productId);
-                            console.debug("Loaded product by ID:", productId, this.state.selected);
+                            //console.debug("Loaded product by ID:", productId, this.state.selected);
                         } catch (e) {
                             console.warn("Failed to load product by ID:", productId, e);
                             // Clear invalid product ID

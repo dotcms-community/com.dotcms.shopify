@@ -1,11 +1,5 @@
 query searchCollections($query: String!, $first: Int!, $sortKey: CollectionSortKeys!) {
     collections(first: $first, query: $query, sortKey: $sortKey) {
-        pageInfo {
-            startCursor
-            endCursor
-            hasNextPage
-            hasPreviousPage
-        }
         edges {
             node {
                 id
@@ -13,6 +7,7 @@ query searchCollections($query: String!, $first: Int!, $sortKey: CollectionSortK
                 description
                 handle
                 updatedAt
+
                 products(first: 10) {
                     edges {
                         node {
@@ -22,13 +17,13 @@ query searchCollections($query: String!, $first: Int!, $sortKey: CollectionSortK
                             media(first: 1) {
                                 edges {
                                     node {
-                                        preview {
-                                            image {
-                                                altText
-                                                height
-                                                url
-                                                width
-                                            }
+                                        previewImage {
+
+                                            altText
+                                            height
+                                            url
+                                            width
+
                                         }
                                     }
                                 }

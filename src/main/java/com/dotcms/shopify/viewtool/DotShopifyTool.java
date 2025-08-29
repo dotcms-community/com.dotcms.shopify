@@ -51,8 +51,8 @@ public class DotShopifyTool implements ViewTool {
 
     }
 
-    public Map<String, Object> getProductByHandle(String handle) {
-        return api.get().productById(handle);
+    public Map<String, Object> getCollectionById(String id) {
+        return api.get().collectionById(id);
 
     }
 

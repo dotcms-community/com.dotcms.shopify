@@ -26,20 +26,11 @@
             currencyCode
         }
     }
-    media(first: 10) {
-        edges {
-            node {
-                id
-                alt
-                mediaContentType
-                previewImage {
-                    altText
-                    height
-                    width
-                    url
-                }
-            }
-        }
+    featuredImage{
+        altText
+        height
+        width
+        url
     }
     options {
         id

@@ -1,0 +1,618 @@
+#[[
+<!-- Shopify Product Carousel Web Component -->
+<script type="module">
+    class ShopifyProductCarousel extends HTMLElement {
+        constructor() {
+            super();
+            this.attachShadow({ mode: "open" });
+            this.currentIndex = 0;
+            this.autoPlayInterval = null;
+            this.touchStartX = 0;
+            this.touchEndX = 0;
+            this.isTransitioning = false;
+            this.products = [];
+        }
+
+        static get observedAttributes() {
+            return ['products', 'auto-play', 'show-dots', 'show-arrows', 'items-per-view', 'auto-play-delay'];
+        }
+
+        connectedCallback() {
+            this.parseProducts();
+            this.render();
+            this.setupEventListeners();
+            if (this.getAttribute('auto-play') === 'true') {
+                this.startAutoPlay();
+            }
+        }
+
+        
+        disconnectedCallback() {
+            this.stopAutoPlay();
+            this.removeEventListeners();
+        }
+
+        parseProducts() {
+            const productsAttr = this.getAttribute('products');
+            if (productsAttr) {
+                try {
+                    this.products = JSON.parse(productsAttr);
+                } catch (e) {
+                    console.error('Failed to parse products:', e);
+                    this.products = [];
+                }
+            }
+        }
+
+        get itemsPerView() {
+            return parseInt(this.getAttribute('items-per-view')) || 3;
+        }
+
+        get autoPlayDelay() {
+            return parseInt(this.getAttribute('auto-play-delay')) || 5000;
+        }
+
+        get showDots() {
+            return this.getAttribute('show-dots') !== 'false';
+        }
+
+        get showArrows() {
+            return this.getAttribute('show-arrows') !== 'false';
+        }
+
+        setupEventListeners() {
+            const carousel = this.shadowRoot.querySelector('.carousel-container');
+            const prevBtn = this.shadowRoot.querySelector('.carousel-btn.prev');
+            const nextBtn = this.shadowRoot.querySelector('.carousel-btn.next');
+
+            if (prevBtn) prevBtn.addEventListener('click', () => this.previousSlide());
+            if (nextBtn) nextBtn.addEventListener('click', () => this.nextSlide());
+
+            // Touch/swipe support
+            carousel.addEventListener('touchstart', (e) => this.handleTouchStart(e));
+            carousel.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+
+            // Pause auto-play on hover
+            carousel.addEventListener('mouseenter', () => this.pauseAutoPlay());
+            carousel.addEventListener('mouseleave', () => this.resumeAutoPlay());
+
+            // Keyboard navigation
+            this.addEventListener('keydown', (e) => this.handleKeydown(e));
+
+            // Dot navigation
+            this.shadowRoot.addEventListener('click', (e) => {
+                if (e.target.classList.contains('dot')) {
+                    const index = parseInt(e.target.dataset.index);
+                    this.goToSlide(index);
+                }
+            });
+        }
+
+        removeEventListeners() {
+            // Event listeners are automatically removed when shadow DOM is destroyed
+        }
+
+        handleTouchStart(e) {
+            this.touchStartX = e.touches[0].clientX;
+        }
+
+        handleTouchEnd(e) {
+            this.touchEndX = e.changedTouches[0].clientX;
+            this.handleSwipe();
+        }
+
+        handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = this.touchStartX - this.touchEndX;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    this.nextSlide();
+                } else {
+                    this.previousSlide();
+                }
+            }
+        }
+
+        handleKeydown(e) {
+            switch (e.key) {
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    this.previousSlide();
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    this.nextSlide();
+                    break;
+            }
+        }
+
+        startAutoPlay() {
+            if (this.getAttribute('auto-play') === 'true' && this.products.length > 1) {
+                this.autoPlayInterval = setInterval(() => {
+                    this.nextSlide();
+                }, this.autoPlayDelay);
+            }
+        }
+
+        stopAutoPlay() {
+            if (this.autoPlayInterval) {
+                clearInterval(this.autoPlayInterval);
+                this.autoPlayInterval = null;
+            }
+        }
+
+        pauseAutoPlay() {
+            this.stopAutoPlay();
+        }
+
+        resumeAutoPlay() {
+            if (this.getAttribute('auto-play') === 'true') {
+                this.startAutoPlay();
+            }
+        }
+
+        nextSlide() {
+            if (this.isTransitioning) return;
+            
+            const maxIndex = Math.max(0, this.products.length - this.itemsPerView);
+            this.currentIndex = this.currentIndex >= maxIndex ? 0 : this.currentIndex + 1;
+            this.updateCarousel();
+        }
+
+        previousSlide() {
+            if (this.isTransitioning) return;
+            
+            const maxIndex = Math.max(0, this.products.length - this.itemsPerView);
+            this.currentIndex = this.currentIndex <= 0 ? maxIndex : this.currentIndex - 1;
+            this.updateCarousel();
+        }
+
+        goToSlide(index) {
+            if (this.isTransitioning) return;
+            
+            const maxIndex = Math.max(0, this.products.length - this.itemsPerView);
+            this.currentIndex = Math.min(index, maxIndex);
+            this.updateCarousel();
+        }
+
+        updateCarousel() {
+            const track = this.shadowRoot.querySelector('.carousel-track');
+            const dots = this.shadowRoot.querySelectorAll('.dot');
+            
+            if (track) {
+                this.isTransitioning = true;
+                const translateX = -(this.currentIndex * (100 / this.itemsPerView));
+                track.style.transform = `translateX(${translateX}%)`;
+                
+                // Reset transition flag after animation
+                setTimeout(() => {
+                    this.isTransitioning = false;
+                }, 300);
+            }
+
+            // Update active dot
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === this.currentIndex);
+            });
+
+            // Update arrow states
+            const prevBtn = this.shadowRoot.querySelector('.carousel-btn.prev');
+            const nextBtn = this.shadowRoot.querySelector('.carousel-btn.next');
+            const maxIndex = Math.max(0, this.products.length - this.itemsPerView);
+
+            if (prevBtn) prevBtn.classList.toggle('disabled', this.currentIndex === 0);
+            if (nextBtn) nextBtn.classList.toggle('disabled', this.currentIndex >= maxIndex);
+        }
+
+        formatPrice(price) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(parseFloat(price));
+        }
+
+        truncateText(text, maxLength = 100) {
+            if (!text) return '';
+            return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+        }
+
+        renderProduct(product, index) {
+            const image = product.featuredImage?.url || product.images?.edges?.[0]?.node?.url || '';
+            const title = product.title || 'Untitled Product';
+            const vendor = product.vendor || '';
+            const price = product.priceRange?.minVariantPrice?.amount || '0';
+            const description = this.truncateText(product.description || '', 120);
+            const productUrl = `/api/v1/shopify/product/_redirect?id=${product.id}`;
+
+            return `
+                <div class="product-slide" data-index="${index}">
+                    <div class="product-card">
+                        <div class="product-image-container">
+                            <img src="${image}" 
+                                 alt="${title}" 
+                                 class="product-image"
+                                 onerror="this.onerror=null;this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';" />
+                            <div class="product-overlay">
+                                <a href="${productUrl}" target="_blank" class="view-product-btn">
+                                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                    </svg>
+                                    View Product
+                                </a>
+                            </div>
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-title">${title}</h3>
+                            ${vendor ? `<div class="product-vendor">${vendor}</div>` : ''}
+                            <div class="product-price">${this.formatPrice(price)}</div>
+                            ${description ? `<p class="product-description">${description}</p>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        renderDots() {
+            if (!this.showDots || this.products.length <= this.itemsPerView) return '';
+            
+            const maxIndex = Math.max(0, this.products.length - this.itemsPerView);
+            const dots = Array.from({ length: maxIndex + 1 }, (_, index) => 
+                `<button class="dot ${index === this.currentIndex ? 'active' : ''}" data-index="${index}"></button>`
+            ).join('');
+
+            return `<div class="carousel-dots">${dots}</div>`;
+        }
+
+        render() {
+            if (!this.products.length) {
+                this.shadowRoot.innerHTML = `
+                    <style>
+                        .no-products {
+                            text-align: center;
+                            padding: 60px 20px;
+                            color: #666;
+                            font-size: 18px;
+                        }
+                    </style>
+                    <div class="no-products">No products available</div>
+                `;
+                return;
+            }
+
+            this.shadowRoot.innerHTML = `
+                <style>
+                    * {
+                        box-sizing: border-box;
+                    }
+
+                    :host {
+                        display: block;
+                        width: 100%;
+                        position: relative;
+                        --primary-color: #2563eb;
+                        --secondary-color: #64748b;
+                        --border-color: #e2e8f0;
+                        --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.1);
+                        --shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.1);
+                        --shadow-heavy: 0 10px 25px rgba(0, 0, 0, 0.15);
+                        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    }
+
+                    .carousel-container {
+                        position: relative;
+                        overflow: hidden;
+                        border-radius: 16px;
+                        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+                        padding: 24px;
+                        box-shadow: var(--shadow-medium);
+                    }
+
+                    .carousel-wrapper {
+                        position: relative;
+                        overflow: hidden;
+                        border-radius: 12px;
+                    }
+
+                    .carousel-track {
+                        display: flex;
+                        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                        width: ${(this.products.length / this.itemsPerView) * 100}%;
+                    }
+
+                    .product-slide {
+                        flex: 0 0 ${100 / this.itemsPerView}%;
+                        padding: 0 12px;
+                    }
+
+                    .product-card {
+                        background: white;
+                        border-radius: 12px;
+                        overflow: hidden;
+                        box-shadow: var(--shadow-light);
+                        transition: var(--transition);
+                        height: 100%;
+                        display: flex;
+                        flex-direction: column;
+                    }
+
+                    .product-card:hover {
+                        transform: translateY(-4px);
+                        box-shadow: var(--shadow-heavy);
+                    }
+
+                    .product-image-container {
+                        position: relative;
+                        width: 100%;
+                        height: 240px;
+                        overflow: hidden;
+                        background: #f8fafc;
+                    }
+
+                    .product-image {
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                        transition: var(--transition);
+                    }
+
+                    .product-card:hover .product-image {
+                        transform: scale(1.05);
+                    }
+
+                    .product-overlay {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background: rgba(0, 0, 0, 0.7);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        opacity: 0;
+                        transition: var(--transition);
+                    }
+
+                    .product-card:hover .product-overlay {
+                        opacity: 1;
+                    }
+
+                    .view-product-btn {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        padding: 12px 20px;
+                        background: var(--primary-color);
+                        color: white;
+                        text-decoration: none;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        font-size: 14px;
+                        transition: var(--transition);
+                        transform: translateY(10px);
+                    }
+
+                    .product-card:hover .view-product-btn {
+                        transform: translateY(0);
+                    }
+
+                    .view-product-btn:hover {
+                        background: #1d4ed8;
+                        transform: scale(1.05);
+                    }
+
+                    .product-info {
+                        padding: 20px;
+                        flex: 1;
+                        display: flex;
+                        flex-direction: column;
+                    }
+
+                    .product-title {
+                        font-size: 18px;
+                        font-weight: 700;
+                        color: #1e293b;
+                        margin: 0 0 8px 0;
+                        line-height: 1.4;
+                        display: -webkit-box;
+                        -webkit-line-clamp: 2;
+                        -webkit-box-orient: vertical;
+                        overflow: hidden;
+                    }
+
+                    .product-vendor {
+                        font-size: 14px;
+                        color: var(--secondary-color);
+                        margin-bottom: 8px;
+                        font-weight: 500;
+                    }
+
+                    .product-price {
+                        font-size: 20px;
+                        font-weight: 700;
+                        color: var(--primary-color);
+                        margin-bottom: 12px;
+                    }
+
+                    .product-description {
+                        font-size: 14px;
+                        color: #64748b;
+                        line-height: 1.5;
+                        margin: 0;
+                        flex: 1;
+                        display: -webkit-box;
+                        -webkit-line-clamp: 3;
+                        -webkit-box-orient: vertical;
+                        overflow: hidden;
+                    }
+
+                    .carousel-btn {
+                        position: absolute;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        width: 48px;
+                        height: 48px;
+                        background: white;
+                        border: 2px solid var(--border-color);
+                        border-radius: 50%;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        z-index: 10;
+                        transition: var(--transition);
+                        box-shadow: var(--shadow-medium);
+                    }
+
+                    .carousel-btn:hover:not(.disabled) {
+                        background: var(--primary-color);
+                        border-color: var(--primary-color);
+                        color: white;
+                        transform: translateY(-50%) scale(1.1);
+                    }
+
+                    .carousel-btn.disabled {
+                        opacity: 0.5;
+                        cursor: not-allowed;
+                        background: #f1f5f9;
+                    }
+
+                    .carousel-btn.prev {
+                        left: -24px;
+                    }
+
+                    .carousel-btn.next {
+                        right: -24px;
+                    }
+
+                    .carousel-btn svg {
+                        width: 20px;
+                        height: 20px;
+                        fill: currentColor;
+                    }
+
+                    .carousel-dots {
+                        display: flex;
+                        justify-content: center;
+                        gap: 8px;
+                        margin-top: 24px;
+                    }
+
+                    .dot {
+                        width: 12px;
+                        height: 12px;
+                        border-radius: 50%;
+                        border: none;
+                        background: #cbd5e1;
+                        cursor: pointer;
+                        transition: var(--transition);
+                    }
+
+                    .dot:hover {
+                        background: #94a3b8;
+                        transform: scale(1.2);
+                    }
+
+                    .dot.active {
+                        background: var(--primary-color);
+                        transform: scale(1.3);
+                    }
+
+                    /* Responsive Design */
+                    @media (max-width: 768px) {
+                        .carousel-container {
+                            padding: 16px;
+                        }
+
+                        .product-slide {
+                            padding: 0 8px;
+                        }
+
+                        .product-image-container {
+                            height: 200px;
+                        }
+
+                        .product-info {
+                            padding: 16px;
+                        }
+
+                        .product-title {
+                            font-size: 16px;
+                        }
+
+                        .product-price {
+                            font-size: 18px;
+                        }
+
+                        .carousel-btn {
+                            width: 40px;
+                            height: 40px;
+                        }
+
+                        .carousel-btn.prev {
+                            left: -20px;
+                        }
+
+                        .carousel-btn.next {
+                            right: -20px;
+                        }
+                    }
+
+                    @media (max-width: 480px) {
+                        .carousel-btn.prev {
+                            left: 8px;
+                        }
+
+                        .carousel-btn.next {
+                            right: 8px;
+                        }
+                    }
+                </style>
+
+                <div class="carousel-container">
+                    <div class="carousel-wrapper">
+                        <div class="carousel-track">
+                            ${this.products.map((product, index) => this.renderProduct(product, index)).join('')}
+                        </div>
+                    </div>
+
+                    ${this.showArrows && this.products.length > this.itemsPerView ? `
+                        <button class="carousel-btn prev" aria-label="Previous products">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                            </svg>
+                        </button>
+                        <button class="carousel-btn next" aria-label="Next products">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                            </svg>
+                        </button>
+                    ` : ''}
+
+                    ${this.renderDots()}
+                </div>
+            `;
+
+            // Initialize carousel position
+            setTimeout(() => this.updateCarousel(), 0);
+        }
+
+        attributeChangedCallback(name, oldValue, newValue) {
+            if (oldValue !== newValue) {
+                if (name === 'products') {
+                    this.parseProducts();
+                }
+                this.render();
+                if (name === 'auto-play' && newValue === 'true') {
+                    this.startAutoPlay();
+                } else if (name === 'auto-play' && newValue === 'false') {
+                    this.stopAutoPlay();
+                }
+            }
+        }
+    }
+
+    customElements.define('shopify-product-carousel', ShopifyProductCarousel);
+</script>
+]]#

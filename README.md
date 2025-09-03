@@ -11,10 +11,13 @@
 dotCMS provides a useful api proxy to Shopify's API which can help alieviate cross site scripting issue when requesting data.
 
 It can be found here:
+/api/v1/shopify/proxy/
 
 
 
-## Velocity
+
+
+## Velocity Tool - $dotshopify
 The plugin also provides a velocity viewtool  `$dotshopify` that allows you to pull product information from shopify as well. 
 
 ### Product by Id
@@ -49,8 +52,15 @@ $product.node.id
 #end
 
 
+## Pulling a collection by id
+#set($collection = $dotshopify.getCollectionById("gid://shopify/Collection/438449930457"))
 
 
+$collection.data.collection.title
+--------
+#foreach($product in $collection.data.collection.products.edges)
+$product.node.title
+#end
 
 
 

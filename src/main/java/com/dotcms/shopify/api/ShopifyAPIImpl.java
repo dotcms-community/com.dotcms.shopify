@@ -112,7 +112,7 @@ public class ShopifyAPIImpl implements ShopifyAPI {
 
     @Override
     public Map<String, Object> collectionById(String id) {
-        Logger.info(this.getClass(), "Getting collection by ID: " + id + " for host: " + host.getHostname());
+        Logger.debug(this.getClass(), "Getting collection by ID: " + id + " for host: " + host.getHostname());
 
         String collectionId = id;
         if (!id.startsWith(SHOPIFY_COLLECTION_PREFIX)) {
@@ -124,7 +124,7 @@ public class ShopifyAPIImpl implements ShopifyAPI {
 
     @Override
     public Map<String, Object> searchCollections(String query, int limit) {
-        Logger.info(this.getClass(), "Searching collections with query: " + query + " for host: " + host.getHostname());
+        Logger.debug(this.getClass(), "Searching collections with query: " + query + " for host: " + host.getHostname());
 
         ProductSearcher searcher = ProductSearcher.builder().limit(limit).query(query).sortKey(SortKey.RELEVANCE)
                 .build();
@@ -134,7 +134,7 @@ public class ShopifyAPIImpl implements ShopifyAPI {
 
     @Override
     public Map<String, Object> searchCollections(ProductSearcher searcher) {
-        Logger.info(this.getClass(),
+        Logger.debug(this.getClass(),
                 "Searching collections with query: " + searcher + " for host: " + host.getHostname());
 
         return shopifyService.searchCollections(searcher);

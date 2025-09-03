@@ -52,6 +52,9 @@ public class DotShopifyTool implements ViewTool {
     }
 
     public Map<String, Object> getCollectionById(String id) {
+        if (UtilMethods.isEmpty(id)) {
+            return null;
+        }
         return api.get().collectionById(id);
 
     }

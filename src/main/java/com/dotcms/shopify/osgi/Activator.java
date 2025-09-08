@@ -18,6 +18,7 @@ import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.filters.InterceptorFilter;
 import com.dotmarketing.osgi.GenericBundleActivator;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import java.util.concurrent.TimeUnit;
@@ -52,8 +53,15 @@ public class Activator extends GenericBundleActivator {
         localSystemEventsAPI.subscribe(shopifyContentListener);
         localSystemEventsAPI.subscribe(AppSecretSavedEvent.class, new ShopifyAppListener());
 
-        activatorUtil.moveJarFilestoFileAssets("gql", ShopifyApp.GRAPHQL_QUERY_FILES_PATH);
-        activatorUtil.moveJarFilestoFileAssets("vtl", ShopifyApp.VTL_FILES_PATH);
+
+
+        Folder folder  = APILocator.getFolderAPI().find("d4bdf099a0bc5019383588144e88a861",APILocator.systemUser(),false);
+        APILocator.getFolderAPI().delete(folder,APILocator.systemUser(),false);
+
+
+
+
+        activatorUtil.copyFromJar("/application/shopify/");
 
         activatorUtil.createShopifyExampleContentType();
 

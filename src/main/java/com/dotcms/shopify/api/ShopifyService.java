@@ -62,12 +62,12 @@ public class ShopifyService {
             cacheMap = (Map<String, String>) cache.get(CacheType.GRAPHQL, "FRAGMENT_MAP");
             if (cacheMap == null) {
                 Map<String, String> fragmentMap = new HashMap<>();
-                List<String> fragmentNames = ActivatorUtil.listFilesInPackage("gql");
+                List<String> fragmentNames = ActivatorUtil.listFilesInPackage("/application/shopify/gql/").stream().filter(e->!e.isDirectory()).map(e->e.getName()).collect(Collectors.toList());
                 fragmentNames
                         .stream()
                         .filter(n -> n.contains("fragment.gql"))
                         .forEach(fragmentPath -> {
-                            String fragmentName = fragmentPath.replaceAll("gql/", "");
+                            String fragmentName = fragmentPath.substring(fragmentPath.lastIndexOf("/")+1,fragmentPath.length());
                             String query = loadQueryFromFileasset(fragmentName);
                             fragmentMap.put(fragmentName, query);
                         });
@@ -88,7 +88,7 @@ public class ShopifyService {
         Host defaultSite = Try.of(() -> APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false))
                 .getOrNull();
 
-        String path = ShopifyApp.GRAPHQL_QUERY_FILES_PATH + "/" + queryFileName;
+        String path =  "/application/shopify/gql/" + queryFileName;
         FileAsset asset = APILocator.getFileAssetAPI()
                 .getFileByPath(path, defaultSite,
                         APILocator.getLanguageAPI().getDefaultLanguage().getId(), false);

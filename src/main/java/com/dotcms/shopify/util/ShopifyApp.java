@@ -14,8 +14,8 @@ import javax.annotation.Nonnull;
 
 public class ShopifyApp {
 
-    public static String GRAPHQL_QUERY_FILES_PATH = "/application/shopify/gql";
-    public static String VTL_FILES_PATH = "/application/shopify/vtl";
+
+
 
     public static Map<String, String> instance(@Nonnull Host host) {
         Map<String, String> config = (Map<String, String>) ShopifyCache.getInstance().get(CacheType.CONFIG,

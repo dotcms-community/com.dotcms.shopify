@@ -1,0 +1,42 @@
+query getCollection($id: ID!, $first: Int!, $sortKey: CollectionSortKeys!) {
+  collection(id: $id) {
+    id
+    title
+    description
+    handle
+    updatedAt
+    image {
+      url
+      altText
+      width
+      height
+    }
+    products(first: $first, sortKey: $sortKey, after: $after) {
+      edges {
+        node {
+          id
+          title
+          handle
+          priceRange {
+            minVariantPrice {
+              amount
+              currencyCode
+            }
+          }
+          images(first: 1) {
+            edges {
+              node {
+                url
+                altText
+              }
+            }
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}

@@ -307,8 +307,31 @@ public class ShopifyService {
         variables.put("id", collectionId);
 
         return executeGraphQLQuery(query, variables);
-
     }
+
+
+   /**
+    * Get collection by ID using GraphQL
+    *
+    * @param collectionId The Shopify collection ID (gid format)
+    * @return Collection data as a Map
+    */
+   public Map<String, Object> getCollectionByIdWithOptions(ProductSearcher searcher) {
+      String query = loadQueryFromFileasset("getCollectionById.gql");
+      if (query.isEmpty()) {
+         Logger.error(this, "Failed to load getCollectionById query");
+         return Map.of("errors", "Failed to load searchCollections query");
+      }
+
+      Map<String, Object> variables = new HashMap<>();
+      variables.put("id", collectionId);
+
+      return executeGraphQLQuery(query, variables);
+
+   }
+
+
+
 
     /**
      *

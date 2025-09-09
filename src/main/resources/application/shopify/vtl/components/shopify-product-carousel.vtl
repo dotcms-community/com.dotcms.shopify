@@ -26,7 +26,7 @@
             }
         }
 
-        
+
         disconnectedCallback() {
             this.stopAutoPlay();
             this.removeEventListeners();
@@ -34,6 +34,7 @@
 
         parseProducts() {
             const productsAttr = this.getAttribute('products');
+
             if (productsAttr) {
                 try {
                     this.products = JSON.parse(productsAttr);
@@ -68,13 +69,16 @@
             if (prevBtn) prevBtn.addEventListener('click', () => this.previousSlide());
             if (nextBtn) nextBtn.addEventListener('click', () => this.nextSlide());
 
-            // Touch/swipe support
-            carousel.addEventListener('touchstart', (e) => this.handleTouchStart(e));
-            carousel.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+            // Only add carousel event listeners if carousel exists
+            if (carousel) {
+                // Touch/swipe support
+                carousel.addEventListener('touchstart', (e) => this.handleTouchStart(e));
+                carousel.addEventListener('touchend', (e) => this.handleTouchEnd(e));
 
-            // Pause auto-play on hover
-            carousel.addEventListener('mouseenter', () => this.pauseAutoPlay());
-            carousel.addEventListener('mouseleave', () => this.resumeAutoPlay());
+                // Pause auto-play on hover
+                carousel.addEventListener('mouseenter', () => this.pauseAutoPlay());
+                carousel.addEventListener('mouseleave', () => this.resumeAutoPlay());
+            }
 
             // Keyboard navigation
             this.addEventListener('keydown', (e) => this.handleKeydown(e));
@@ -154,7 +158,7 @@
 
         nextSlide() {
             if (this.isTransitioning) return;
-            
+
             const maxIndex = Math.max(0, this.products.length - this.itemsPerView);
             this.currentIndex = this.currentIndex >= maxIndex ? 0 : this.currentIndex + 1;
             this.updateCarousel();
@@ -162,7 +166,7 @@
 
         previousSlide() {
             if (this.isTransitioning) return;
-            
+
             const maxIndex = Math.max(0, this.products.length - this.itemsPerView);
             this.currentIndex = this.currentIndex <= 0 ? maxIndex : this.currentIndex - 1;
             this.updateCarousel();
@@ -170,7 +174,7 @@
 
         goToSlide(index) {
             if (this.isTransitioning) return;
-            
+
             const maxIndex = Math.max(0, this.products.length - this.itemsPerView);
             this.currentIndex = Math.min(index, maxIndex);
             this.updateCarousel();
@@ -179,12 +183,12 @@
         updateCarousel() {
             const track = this.shadowRoot.querySelector('.carousel-track');
             const dots = this.shadowRoot.querySelectorAll('.dot');
-            
+
             if (track) {
                 this.isTransitioning = true;
                 const translateX = -(this.currentIndex * (100 / this.itemsPerView));
                 track.style.transform = `translateX(${translateX}%)`;
-                
+
                 // Reset transition flag after animation
                 setTimeout(() => {
                     this.isTransitioning = false;
@@ -229,8 +233,8 @@
                 <div class="product-slide" data-index="${index}">
                     <div class="product-card">
                         <div class="product-image-container">
-                            <img src="${image}" 
-                                 alt="${title}" 
+                            <img src="${image}"
+                                 alt="${title}"
                                  class="product-image"
                                  onerror="this.onerror=null;this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';" />
                             <div class="product-overlay">
@@ -255,9 +259,9 @@
 
         renderDots() {
             if (!this.showDots || this.products.length <= this.itemsPerView) return '';
-            
+
             const maxIndex = Math.max(0, this.products.length - this.itemsPerView);
-            const dots = Array.from({ length: maxIndex + 1 }, (_, index) => 
+            const dots = Array.from({ length: maxIndex + 1 }, (_, index) =>
                 `<button class="dot ${index === this.currentIndex ? 'active' : ''}" data-index="${index}"></button>`
             ).join('');
 

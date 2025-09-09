@@ -1,0 +1,83 @@
+
+#set($myCollection = $json.generate($dotContentMap.shopifyCollection))
+
+#set($productsToShow = $myCollection.limit)
+#set($sortKey = $myCollection.sortKey)
+#set($shopifyData = $dotshopify.getCollectionById($myCollection.id))
+#set($collection = $shopifyData.data.collection)
+#set($products = $collection.products.edges)
+
+
+
+<!-- Include the product grid component -->
+#dotParse("/application/shopify/vtl/components/shopify-product-grid.vtl")
+
+<div class="collection-header">
+    <h1 class="collection-title">#if($collection.title)$collection.title#{else}Product Collection#end</h1>
+    #if($collection.description)
+        <p class="collection-description">$collection.description</p>
+    #end
+</div>
+
+<script>
+    const productJson = JSON.parse("$UtilMethods.javaScriptify($products.toString())");
+    console.log("productJson:", productJson);
+    
+    // Extract product nodes from the edges structure
+    const productNodes = productJson.map(edge => edge.node);
+    console.log("productNodes:", productNodes);
+    
+    // Set the products data on the grid component
+    document.addEventListener('DOMContentLoaded', function() {
+        const productGrid = document.querySelector('shopify-product-grid');
+        if (productGrid) {
+            productGrid.setAttribute('products', JSON.stringify(productNodes));
+        }
+    });
+</script>
+
+<!-- Product Grid -->
+<shopify-product-grid
+    products="[]"
+    columns="4"
+    rows="2">
+</shopify-product-grid>
+
+<style>
+    .collection-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding: 2rem 1rem;
+    }
+
+    .collection-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 1rem;
+        line-height: 1.2;
+    }
+
+    .collection-description {
+        font-size: 1.125rem;
+        color: #64748b;
+        max-width: 600px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+        .collection-header {
+            margin-bottom: 2rem;
+            padding: 1rem;
+        }
+
+        .collection-title {
+            font-size: 2rem;
+        }
+
+        .collection-description {
+            font-size: 1rem;
+        }
+    }
+</style>

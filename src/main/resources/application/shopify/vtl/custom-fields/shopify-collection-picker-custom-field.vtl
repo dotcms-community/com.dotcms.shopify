@@ -132,7 +132,23 @@
                             console.debug("Parsed JSON:", data);
                             if (data && data.id) {
                                 await this.loadCollectionById(data.id);
+                                
+                                // Restore saved configuration values
+                                if (data.limit !== undefined) {
+                                    this.state.config.limit = data.limit;
+                                }
+                                if (data.sortKey !== undefined) {
+                                    this.state.config.sortKey = data.sortKey;
+                                }
+                                if (data.enablePagination !== undefined) {
+                                    this.state.config.enablePagination = data.enablePagination;
+                                }
+                                
                                 console.debug("Loaded collection from JSON:", data);
+                                console.debug("Restored config:", this.state.config);
+                                
+                                // Re-render to show the restored configuration
+                                this.render();
                             }
                         } catch (e) {
                           console.debug("error:",e);
@@ -152,9 +168,9 @@
                         id: this.state.selected.id,
                         title: this.state.selected.title,
                         handle: this.state.selected.handle,
-                        limit: this.state.limit,
-                        sortKey: this.state.sortKey,
-                        enablePagination: this.state.enablePagination
+                        limit: this.state.config.limit,
+                        sortKey: this.state.config.sortKey,
+                        enablePagination: this.state.config.enablePagination
                     
                 } : null;
 

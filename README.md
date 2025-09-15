@@ -8,10 +8,38 @@
 
 ## dotCMS Shopify API
 
-dotCMS provides a useful api proxy to Shopify's API which can help alieviate cross site scripting issue when requesting data.
+dotCMS provides a useful apis to proxy to Shopify's API which can help alleviate cross-site scripting issue when requesting data.
 
 It can be found here:
-/api/v1/shopify/proxy/
+
+`/v1/shopify/product`
+and
+`/v1/shopify/collection`
+
+```
+
+curl -H"Authorization: Bearer $TOK" "http://127.0.0.1:8082/api/v1/shopify/product/?id=9257301049561"
+
+
+curl -H"Authorization: Bearer $TOK" "http://127.0.0.1:8082/api/v1/shopify/product/?id=gid://shopify/Product/9257301049561"
+
+
+curl -H"Authorization: Bearer $TOK" "http://127.0.0.1:8082/api/v1/shopify/product/_search?query=boots&limit=3"
+
+
+
+
+
+```
+
+/v1/shopify/product?id=9257301049561
+/v1/shopify/collection?id=gid://shopify/Collection/438449930457
+
+
+
+
+
+
 
 
 

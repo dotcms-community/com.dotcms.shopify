@@ -42,7 +42,7 @@ public class ShopifyCache implements Cachable {
 
   public Object get(CacheType type, String key) {
     Object cacheObject = (Object) cache.getNoThrow(type.name() + key, getPrimaryGroup());
-    return cacheObject instanceof CacheValue ? ((CacheValue) cacheObject).value : cacheObject;
+    return cacheObject ;
   }
 
   public void put(CacheType type, String key, Object valueIn, long ttl) {

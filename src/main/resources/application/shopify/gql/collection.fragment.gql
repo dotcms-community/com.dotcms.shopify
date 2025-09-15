@@ -1,0 +1,13 @@
+# Collection Fragment
+
+id
+title
+description
+handle
+updatedAt
+image {
+    url
+    altText
+    width
+    height
+}

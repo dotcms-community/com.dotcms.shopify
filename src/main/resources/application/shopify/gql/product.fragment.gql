@@ -1,4 +1,6 @@
-    id
+# Product Details Fragment
+
+     id
     title
     productType
     descriptionHtml

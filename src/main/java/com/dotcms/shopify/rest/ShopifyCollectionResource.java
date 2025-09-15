@@ -26,6 +26,21 @@ public class ShopifyCollectionResource implements Serializable {
 
     private static final long serialVersionUID = 204840922704940654L;
 
+
+    /**
+     * Retrieves a Shopify collection by its identifier.
+     *
+     * Checks if the user is authenticated and authorized to access the resource.
+     * If the `id` parameter is not provided in the request, returns a HTTP 404 response.
+     * Otherwise, fetches the Shopify collection data using the provided collection ID
+     * and returns it in the response.
+     *
+     * @param request the HTTP servlet request containing the client-specific context
+     * @param response the HTTP servlet response to send data to the client
+     * @param searchParams the parameters for searching collections, which must include the collection ID (`id`)
+     * @return a Response containing the Shopify collection data if the ID is valid,
+     *         or a 404 HTTP response if the ID is missing or invalid.
+     */
     @GET
     @Path("/")
     @NoCache
@@ -48,6 +63,17 @@ public class ShopifyCollectionResource implements Serializable {
         return Response.ok(api.collectionById(searchParams.id)).build();
     }
 
+    /**
+     * Searches Shopify collections based on the provided search parameters.
+     * Validates user access to ensure the request is authenticated and authorized.
+     * If the search parameter `query` is empty, returns an HTTP 500 response indicating an invalid argument.
+     * Otherwise, performs the collection search using the Shopify API and returns the results.
+     *
+     * @param request the HTTP servlet request containing the client-specific context, such as headers
+     * @param response the HTTP servlet response to send data back to the client
+     * @param searchParams the parameters used to search Shopify collections, including query, limit, sort options, etc.
+     * @return a Response object containing the search results if successful, or an HTTP error response if the query is invalid
+     */
     @GET
     @Path("/_search")
     @NoCache
@@ -71,6 +97,14 @@ public class ShopifyCollectionResource implements Serializable {
 
     }
 
+    /**
+     * Redirects to a Shopify collection URL based on the provided collection ID.
+     * @param request
+     * @param response
+     * @param searchParams
+     * @return
+     * @throws URISyntaxException
+     */
     @GET
     @Path("/_redirect")
     @NoCache

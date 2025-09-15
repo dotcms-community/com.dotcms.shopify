@@ -1,35 +1,40 @@
 #[[
-<!-- Shopify Product Carousel Web Component -->
+<!-- Shopify Product Grid Web Component -->
 <script type="module">
-    class ShopifyProductCarousel extends HTMLElement {
+    class ShopifyProductGrid extends HTMLElement {
         constructor() {
             super();
             this.attachShadow({ mode: "open" });
-            this.currentIndex = 0;
-            this.autoPlayInterval = null;
-            this.touchStartX = 0;
-            this.touchEndX = 0;
-            this.isTransitioning = false;
             this.products = [];
         }
 
         static get observedAttributes() {
-            return ['products', 'auto-play', 'show-dots', 'show-arrows', 'items-per-view', 'auto-play-delay'];
+            return ['products', 'columns', 'gap'];
+        }
+
+        reloadGrid() {
+            // Parse new products and re-render
+            this.parseProducts();
+            this.render();
+        }
+
+        // Public method to update products and reload
+        updateProducts(newProducts) {
+            if (Array.isArray(newProducts)) {
+                this.setAttribute('products', JSON.stringify(newProducts));
+                this.reloadGrid();
+            } else {
+                console.error('updateProducts expects an array of products');
+            }
         }
 
         connectedCallback() {
             this.parseProducts();
             this.render();
-            this.setupEventListeners();
-            if (this.getAttribute('auto-play') === 'true') {
-                this.startAutoPlay();
-            }
         }
 
-
         disconnectedCallback() {
-            this.stopAutoPlay();
-            this.removeEventListeners();
+            // Clean up if needed
         }
 
         parseProducts() {
@@ -45,169 +50,14 @@
             }
         }
 
-        get itemsPerView() {
-            return parseInt(this.getAttribute('items-per-view')) || 3;
+        get columns() {
+            return parseInt(this.getAttribute('columns')) || 4;
         }
 
-        get autoPlayDelay() {
-            return parseInt(this.getAttribute('auto-play-delay')) || 5000;
+        get gap() {
+            return this.getAttribute('gap') || '1.5rem';
         }
 
-        get showDots() {
-            return this.getAttribute('show-dots') !== 'false';
-        }
-
-        get showArrows() {
-            return this.getAttribute('show-arrows') !== 'false';
-        }
-
-        setupEventListeners() {
-            const carousel = this.shadowRoot.querySelector('.carousel-container');
-            const prevBtn = this.shadowRoot.querySelector('.carousel-btn.prev');
-            const nextBtn = this.shadowRoot.querySelector('.carousel-btn.next');
-
-            if (prevBtn) prevBtn.addEventListener('click', () => this.previousSlide());
-            if (nextBtn) nextBtn.addEventListener('click', () => this.nextSlide());
-
-            // Only add carousel event listeners if carousel exists
-            if (carousel) {
-                // Touch/swipe support
-                carousel.addEventListener('touchstart', (e) => this.handleTouchStart(e));
-                carousel.addEventListener('touchend', (e) => this.handleTouchEnd(e));
-
-                // Pause auto-play on hover
-                carousel.addEventListener('mouseenter', () => this.pauseAutoPlay());
-                carousel.addEventListener('mouseleave', () => this.resumeAutoPlay());
-            }
-
-            // Keyboard navigation
-            this.addEventListener('keydown', (e) => this.handleKeydown(e));
-
-            // Dot navigation
-            this.shadowRoot.addEventListener('click', (e) => {
-                if (e.target.classList.contains('dot')) {
-                    const index = parseInt(e.target.dataset.index);
-                    this.goToSlide(index);
-                }
-            });
-        }
-
-        removeEventListeners() {
-            // Event listeners are automatically removed when shadow DOM is destroyed
-        }
-
-        handleTouchStart(e) {
-            this.touchStartX = e.touches[0].clientX;
-        }
-
-        handleTouchEnd(e) {
-            this.touchEndX = e.changedTouches[0].clientX;
-            this.handleSwipe();
-        }
-
-        handleSwipe() {
-            const swipeThreshold = 50;
-            const diff = this.touchStartX - this.touchEndX;
-
-            if (Math.abs(diff) > swipeThreshold) {
-                if (diff > 0) {
-                    this.nextSlide();
-                } else {
-                    this.previousSlide();
-                }
-            }
-        }
-
-        handleKeydown(e) {
-            switch (e.key) {
-                case 'ArrowLeft':
-                    e.preventDefault();
-                    this.previousSlide();
-                    break;
-                case 'ArrowRight':
-                    e.preventDefault();
-                    this.nextSlide();
-                    break;
-            }
-        }
-
-        startAutoPlay() {
-            if (this.getAttribute('auto-play') === 'true' && this.products.length > 1) {
-                this.autoPlayInterval = setInterval(() => {
-                    this.nextSlide();
-                }, this.autoPlayDelay);
-            }
-        }
-
-        stopAutoPlay() {
-            if (this.autoPlayInterval) {
-                clearInterval(this.autoPlayInterval);
-                this.autoPlayInterval = null;
-            }
-        }
-
-        pauseAutoPlay() {
-            this.stopAutoPlay();
-        }
-
-        resumeAutoPlay() {
-            if (this.getAttribute('auto-play') === 'true') {
-                this.startAutoPlay();
-            }
-        }
-
-        nextSlide() {
-            if (this.isTransitioning) return;
-
-            const maxIndex = Math.max(0, this.products.length - this.itemsPerView);
-            this.currentIndex = this.currentIndex >= maxIndex ? 0 : this.currentIndex + 1;
-            this.updateCarousel();
-        }
-
-        previousSlide() {
-            if (this.isTransitioning) return;
-
-            const maxIndex = Math.max(0, this.products.length - this.itemsPerView);
-            this.currentIndex = this.currentIndex <= 0 ? maxIndex : this.currentIndex - 1;
-            this.updateCarousel();
-        }
-
-        goToSlide(index) {
-            if (this.isTransitioning) return;
-
-            const maxIndex = Math.max(0, this.products.length - this.itemsPerView);
-            this.currentIndex = Math.min(index, maxIndex);
-            this.updateCarousel();
-        }
-
-        updateCarousel() {
-            const track = this.shadowRoot.querySelector('.carousel-track');
-            const dots = this.shadowRoot.querySelectorAll('.dot');
-
-            if (track) {
-                this.isTransitioning = true;
-                const translateX = -(this.currentIndex * (100 / this.itemsPerView));
-                track.style.transform = `translateX(${translateX}%)`;
-
-                // Reset transition flag after animation
-                setTimeout(() => {
-                    this.isTransitioning = false;
-                }, 300);
-            }
-
-            // Update active dot
-            dots.forEach((dot, index) => {
-                dot.classList.toggle('active', index === this.currentIndex);
-            });
-
-            // Update arrow states
-            const prevBtn = this.shadowRoot.querySelector('.carousel-btn.prev');
-            const nextBtn = this.shadowRoot.querySelector('.carousel-btn.next');
-            const maxIndex = Math.max(0, this.products.length - this.itemsPerView);
-
-            if (prevBtn) prevBtn.classList.toggle('disabled', this.currentIndex === 0);
-            if (nextBtn) nextBtn.classList.toggle('disabled', this.currentIndex >= maxIndex);
-        }
 
         formatPrice(price) {
             return new Intl.NumberFormat('en-US', {
@@ -230,43 +80,31 @@
             const productUrl = `/api/v1/shopify/product/_redirect?id=${product.id}`;
 
             return `
-                <div class="product-slide" data-index="${index}">
-                    <div class="product-card">
-                        <div class="product-image-container">
-                            <img src="${image}"
-                                 alt="${title}"
-                                 class="product-image"
-                                 onerror="this.onerror=null;this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';" />
-                            <div class="product-overlay">
-                                <a href="${productUrl}" target="_blank" class="view-product-btn">
-                                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                                    </svg>
-                                    View Product
-                                </a>
-                            </div>
+                <div class="product-card" data-index="${index}">
+                    <div class="product-image-container">
+                        <img src="${image}"
+                             alt="${title}"
+                             class="product-image"
+                             onerror="this.onerror=null;this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';" />
+                        <div class="product-overlay">
+                            <a href="${productUrl}" target="_blank" class="view-product-btn">
+                                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                                View Product
+                            </a>
                         </div>
-                        <div class="product-info">
-                            <h3 class="product-title">${title}</h3>
-                            ${vendor ? `<div class="product-vendor">${vendor}</div>` : ''}
-                            <div class="product-price">${this.formatPrice(price)}</div>
-                            ${description ? `<p class="product-description">${description}</p>` : ''}
-                        </div>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">${title}</h3>
+                        ${vendor ? `<div class="product-vendor">${vendor}</div>` : ''}
+                        <div class="product-price">${this.formatPrice(price)}</div>
+                        ${description ? `<p class="product-description">${description}</p>` : ''}
                     </div>
                 </div>
             `;
         }
 
-        renderDots() {
-            if (!this.showDots || this.products.length <= this.itemsPerView) return '';
-
-            const maxIndex = Math.max(0, this.products.length - this.itemsPerView);
-            const dots = Array.from({ length: maxIndex + 1 }, (_, index) =>
-                `<button class="dot ${index === this.currentIndex ? 'active' : ''}" data-index="${index}"></button>`
-            ).join('');
-
-            return `<div class="carousel-dots">${dots}</div>`;
-        }
 
         render() {
             if (!this.products.length) {
@@ -293,7 +131,6 @@
                     :host {
                         display: block;
                         width: 100%;
-                        position: relative;
                         --primary-color: #2563eb;
                         --secondary-color: #64748b;
                         --border-color: #e2e8f0;
@@ -303,34 +140,21 @@
                         --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                     }
 
-                    .carousel-container {
-                        position: relative;
-                        overflow: hidden;
-                        border-radius: 16px;
-                        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+                    .grid-container {
                         padding: 24px;
+                        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+                        border-radius: 16px;
                         box-shadow: var(--shadow-medium);
                     }
 
-                    .carousel-wrapper {
-                        position: relative;
-                        overflow: hidden;
-                        border-radius: 12px;
-                    }
-
-                    .carousel-track {
-                        display: flex;
-                        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                        width: ${(this.products.length / this.itemsPerView) * 100}%;
-                    }
-
-                    .product-slide {
-                        flex: 0 0 ${100 / this.itemsPerView}%;
-                        padding: 0 12px;
+                    .products-grid {
+                        display: grid;
+                        grid-template-columns: repeat(${this.columns}, 1fr);
+                        gap: ${this.gap};
                     }
 
                     .product-card {
-                        background: white;
+                        background: #ffffff;
                         border-radius: 12px;
                         overflow: hidden;
                         box-shadow: var(--shadow-light);
@@ -338,6 +162,7 @@
                         height: 100%;
                         display: flex;
                         flex-direction: column;
+                        border: 1px solid #f1f5f9;
                     }
 
                     .product-card:hover {
@@ -350,13 +175,12 @@
                         width: 100%;
                         height: 240px;
                         overflow: hidden;
-                        background: #f8fafc;
                     }
 
                     .product-image {
                         width: 100%;
                         height: 100%;
-                        object-fit: cover;
+                        object-fit: contain;
                         transition: var(--transition);
                     }
 
@@ -451,86 +275,22 @@
                         overflow: hidden;
                     }
 
-                    .carousel-btn {
-                        position: absolute;
-                        top: 50%;
-                        transform: translateY(-50%);
-                        width: 48px;
-                        height: 48px;
-                        background: white;
-                        border: 2px solid var(--border-color);
-                        border-radius: 50%;
-                        cursor: pointer;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        z-index: 10;
-                        transition: var(--transition);
-                        box-shadow: var(--shadow-medium);
-                    }
-
-                    .carousel-btn:hover:not(.disabled) {
-                        background: var(--primary-color);
-                        border-color: var(--primary-color);
-                        color: white;
-                        transform: translateY(-50%) scale(1.1);
-                    }
-
-                    .carousel-btn.disabled {
-                        opacity: 0.5;
-                        cursor: not-allowed;
-                        background: #f1f5f9;
-                    }
-
-                    .carousel-btn.prev {
-                        left: -24px;
-                    }
-
-                    .carousel-btn.next {
-                        right: -24px;
-                    }
-
-                    .carousel-btn svg {
-                        width: 20px;
-                        height: 20px;
-                        fill: currentColor;
-                    }
-
-                    .carousel-dots {
-                        display: flex;
-                        justify-content: center;
-                        gap: 8px;
-                        margin-top: 24px;
-                    }
-
-                    .dot {
-                        width: 12px;
-                        height: 12px;
-                        border-radius: 50%;
-                        border: none;
-                        background: #cbd5e1;
-                        cursor: pointer;
-                        transition: var(--transition);
-                    }
-
-                    .dot:hover {
-                        background: #94a3b8;
-                        transform: scale(1.2);
-                    }
-
-                    .dot.active {
-                        background: var(--primary-color);
-                        transform: scale(1.3);
-                    }
 
                     /* Responsive Design */
+                    @media (max-width: 1200px) {
+                        .products-grid {
+                            grid-template-columns: repeat(3, 1fr);
+                        }
+                    }
+
                     @media (max-width: 768px) {
-                        .carousel-container {
+                        .grid-container {
                             padding: 16px;
                         }
 
-                        .product-slide {
-                            padding: 0 8px;
+                        .products-grid {
+                            grid-template-columns: repeat(2, 1fr);
+                            gap: 1rem;
                         }
 
                         .product-image-container {
@@ -548,58 +308,25 @@
                         .product-price {
                             font-size: 18px;
                         }
-
-                        .carousel-btn {
-                            width: 40px;
-                            height: 40px;
-                        }
-
-                        .carousel-btn.prev {
-                            left: -20px;
-                        }
-
-                        .carousel-btn.next {
-                            right: -20px;
-                        }
                     }
 
                     @media (max-width: 480px) {
-                        .carousel-btn.prev {
-                            left: 8px;
+                        .products-grid {
+                            grid-template-columns: 1fr;
                         }
 
-                        .carousel-btn.next {
-                            right: 8px;
+                        .grid-container {
+                            padding: 12px;
                         }
                     }
                 </style>
 
-                <div class="carousel-container">
-                    <div class="carousel-wrapper">
-                        <div class="carousel-track">
-                            ${this.products.map((product, index) => this.renderProduct(product, index)).join('')}
-                        </div>
+                <div class="grid-container">
+                    <div class="products-grid">
+                        ${this.products.map((product, index) => this.renderProduct(product, index)).join('')}
                     </div>
-
-                    ${this.showArrows && this.products.length > this.itemsPerView ? `
-                        <button class="carousel-btn prev" aria-label="Previous products">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-                            </svg>
-                        </button>
-                        <button class="carousel-btn next" aria-label="Next products">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-                            </svg>
-                        </button>
-                    ` : ''}
-
-                    ${this.renderDots()}
                 </div>
             `;
-
-            // Initialize carousel position
-            setTimeout(() => this.updateCarousel(), 0);
         }
 
         attributeChangedCallback(name, oldValue, newValue) {
@@ -608,15 +335,10 @@
                     this.parseProducts();
                 }
                 this.render();
-                if (name === 'auto-play' && newValue === 'true') {
-                    this.startAutoPlay();
-                } else if (name === 'auto-play' && newValue === 'false') {
-                    this.stopAutoPlay();
-                }
             }
         }
     }
 
-    customElements.define('shopify-product-carousel', ShopifyProductCarousel);
+    customElements.define('shopify-product-grid', ShopifyProductGrid);
 </script>
 ]]#

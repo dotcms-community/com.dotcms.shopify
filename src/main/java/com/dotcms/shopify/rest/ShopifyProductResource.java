@@ -33,6 +33,14 @@ public class ShopifyProductResource implements Serializable {
 
     private static final long serialVersionUID = 204840922704940654L;
 
+    /**
+     * Searches for Shopify products the product identified by the provided ID.
+     *
+     * @param request the HTTP servlet request containing user and session information
+     * @param response the HTTP servlet response for sending the result
+     * @param searchParams the search parameters for querying Shopify products
+     * @return a Response object containing the search results in JSON format or an error message if the input is invalid
+     */
     @GET
     @Path("/")
     @NoCache
@@ -41,27 +49,20 @@ public class ShopifyProductResource implements Serializable {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @BeanParam final ProductSearchParams searchParams) {
-
-        final User user = new WebResource.InitBuilder(request, response)
-                .rejectWhenNoUser(true)
-                .requiredFrontendUser(true)
-                .requiredBackendUser(true)
-                .init()
-                .getUser();
-
-        Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-
-        Host host = searchParams.hostName != null
-                ? Try.of(() -> APILocator.getHostAPI().resolveHostName(searchParams.hostName, user, true))
-                        .getOrElse(currentHost)
-                : currentHost;
-
-        ShopifyAPI api = ShopifyAPI.api(host);
-        ProductSearcher productSearcher = searchParams.toProductSearcher();
-
-        return searchProducts(api, productSearcher);
+        if (UtilMethods.isEmpty(searchParams.id)) {
+            return Response.status(404).build();
+        }
+        return searchProducts(request, response, searchParams);
     }
 
+    /**
+     * Searches for Shopify products based on the provided search parameters.
+     *
+     * @param request the HTTP servlet request containing user and session information
+     * @param response the HTTP servlet response for sending the result
+     * @param searchParams the search parameters for querying Shopify products
+     * @return a Response object containing the search results in JSON format or an error message if the input is invalid
+     */
     @GET
     @Path("/_search")
     @NoCache
@@ -109,6 +110,12 @@ public class ShopifyProductResource implements Serializable {
 
     }
 
+    /**
+     * Tests the connection to Shopify
+     * @param request
+     * @param response
+     * @return
+     */
     @GET
     @Path("/test")
     @NoCache
@@ -128,6 +135,16 @@ public class ShopifyProductResource implements Serializable {
 
     }
 
+
+    /**
+     * Redirects to a Shopify product URL based on the provided product ID.
+     *
+     * @param request the HTTP servlet request object containing user and request details
+     * @param response the HTTP servlet response object for returning the result
+     * @param searchParams the search parameters containing details such as the product ID
+     * @return a Response object with an HTTP 302 Found status and the location set to the Shopify product URL
+     * @throws URISyntaxException if the generated Shopify product URL is not valid
+     */
     @GET
     @Path("/_redirect")
     @NoCache

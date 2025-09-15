@@ -7,6 +7,7 @@
             super();
             this.attachShadow({ mode: "open" });
             this.selectedCollectionKey = "selectedShopifyCollection";
+
             this.state = {
                 selected: null,
                 search: "",
@@ -46,6 +47,7 @@
 
         connectedCallback() {
             this.render();
+          
             this.loadSelectedFromContentField();
             this.shadowRoot.addEventListener("click", this.handleDocumentClick.bind(this));
         }
@@ -125,6 +127,7 @@
                 if (contentFieldElement && contentFieldElement.value) {
                     console.debug("Collection field value:", contentFieldElement.value);
                     const fieldValue = contentFieldElement.value.trim();
+                    
                     if (fieldValue) {
                         try {
                             // Try to parse as JSON first (new format)
@@ -239,7 +242,7 @@
         }
 
         async loadCollectionById(collectionId) {
-
+            console.debug("loading collection by id", collectionId);
             const resp = await fetch(`${this.apiEndpoint}?id=${collectionId}`);
             if (!resp.ok) {
                 throw new Error(resp.statusText);
@@ -480,7 +483,7 @@
               `
               }
           console.debug("collection", collection);
-            let myImage = collection?.products?.edges[0]?.node?.media?.edges[0]?.node?.previewImage;
+            let myImage = collection?.products?.edges[0]?.node?.featuredImage;
             myImage = myImage ? myImage : collection?.products?.edges[0]?.node?.images.edges[0].node;
 
             return `

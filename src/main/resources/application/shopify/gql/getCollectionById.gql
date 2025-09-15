@@ -1,42 +1,17 @@
 query getCollection($id: ID!) {
   collection(id: $id) {
-    id
-    title
-    description
-    handle
-    updatedAt
-    image {
-      url
-      altText
-      width
-      height
-    }
+    $collection.fragment.gql
     products(first: 20) {
-      edges {
-        node {
-          id
-          title
-          handle
-          priceRange {
-            minVariantPrice {
-              amount
-              currencyCode
+        edges {
+            cursor
+            node {
+                $product.fragment.gql
             }
-          }
-          images(first: 1) {
-            edges {
-              node {
-                url
-                altText
-              }
-            }
-          }
         }
-      }
       pageInfo {
         hasNextPage
         endCursor
       }
-    }
+  }
   }
 }

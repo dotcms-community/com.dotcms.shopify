@@ -124,6 +124,7 @@ public class ShopifyService {
         for (Map.Entry<String, String> entry : getFragmentMap().entrySet()) {
             query = query.replace("$" + entry.getKey(), entry.getValue());
         }
+        System.out.println("query:" + query);
 
         try {
             // Get configuration
@@ -324,7 +325,7 @@ public class ShopifyService {
       }
 
       Map<String, Object> variables = new HashMap<>();
-      variables.put("id", collectionId);
+      variables.put("id", searcher.id);
 
       return executeGraphQLQuery(query, variables);
 

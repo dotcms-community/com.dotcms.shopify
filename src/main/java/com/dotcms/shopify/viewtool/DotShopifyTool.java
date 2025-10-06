@@ -37,6 +37,12 @@ public class DotShopifyTool implements ViewTool {
 
         return api.get().productByHandle(handle);
     }
+    public Map<String, Object> getProductByHandle(String handle, int variantLimit) {
+
+        return api.get().productByHandle(handle, variantLimit);
+    }
+
+
 
 
     public Map<String, Object> searchProducts(String searchTerm, int limit) {

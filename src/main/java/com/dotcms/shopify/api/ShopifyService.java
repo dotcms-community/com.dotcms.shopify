@@ -65,7 +65,7 @@ public class ShopifyService {
                         .filter(n -> n.contains("fragment.gql"))
                         .forEach(fragmentPath -> {
                             String fragmentName = fragmentPath.substring(fragmentPath.lastIndexOf("/")+1,fragmentPath.length());
-                            String query = loadQueryFromFileasset(fragmentName);
+                            String query = readFileAsset(fragmentName);
                             fragmentMap.put(fragmentName, query);
                         });
                 cache.put(CacheType.GRAPHQL, "FRAGMENT_MAP", Map.copyOf(fragmentMap));
@@ -81,7 +81,7 @@ public class ShopifyService {
      * @return The query string
      */
 
-    private String loadQueryFromFileasset(String queryFileName) {
+    private String readFileAsset(String queryFileName) {
         Host defaultSite = Try.of(() -> APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false))
                 .getOrNull();
 
@@ -102,12 +102,20 @@ public class ShopifyService {
         }
 
 
-        for (Map.Entry<String, String> entry : getFragmentMap().entrySet()) {
-            query = query.replace("$" + entry.getKey(), entry.getValue());
-        }
 
         return query;
     }
+
+    public String loadQueryAndReplaceFragments(String fileName){
+        String query = readFileAsset(fileName);
+
+        for (Map.Entry<String, String> entry : getFragmentMap().entrySet()) {
+            query = query.replace("$" + entry.getKey(), entry.getValue());
+        }
+        return query;
+
+    }
+
 
     public JSONObject executeGraphQLQuery(String query) {
 
@@ -206,14 +214,14 @@ public class ShopifyService {
     }
 
     public Map<String, Object> getProductByHandle(String productHandle, int firstVariants) {
-        String query = loadQueryFromFileasset("getProductByHandle.gql");
+        String query = loadQueryAndReplaceFragments("getProductByHandle.gql");
         Map<String, Object> variables = Map.of("handle", productHandle, "firstVariants", firstVariants);
         return executeGraphQLQuery(query, variables);
 
     }
 
     public Map<String, Object> testConnection() {
-        String query = loadQueryFromFileasset("testConnection.gql");
+        String query = loadQueryAndReplaceFragments("testConnection.gql");
         String configStoreName = getShopifyConfig().get(AppKey.STORE_NAME.name());
 
         if (UtilMethods.isEmpty(configStoreName)) {
@@ -235,7 +243,7 @@ public class ShopifyService {
      * @return Product data as a Map
      */
     public Map<String, Object> getProductById(String productId) {
-        String query = loadQueryFromFileasset("getProductById.gql");
+        String query = loadQueryAndReplaceFragments("getProductById.gql");
         if (query.isEmpty()) {
             Logger.error(this, "Failed to load getProductById query");
             return Collections.emptyMap();
@@ -258,8 +266,8 @@ public class ShopifyService {
 
         if (searcher.hasCursor()) {
             String query = searcher.before == BEFORE_AFTER.BEFORE
-                    ? loadQueryFromFileasset("searchProductsBefore.gql")
-                    : loadQueryFromFileasset("searchProductsAfter.gql");
+                    ? loadQueryAndReplaceFragments("searchProductsBefore.gql")
+                    : loadQueryAndReplaceFragments("searchProductsAfter.gql");
 
             if (query.isEmpty()) {
                 Logger.error(this, "Failed to load searchProducts query");
@@ -274,7 +282,7 @@ public class ShopifyService {
             return executeGraphQLQuery(query, variables);
 
         } else {
-            String query = loadQueryFromFileasset("searchProducts.gql");
+            String query = loadQueryAndReplaceFragments("searchProducts.gql");
             if (query.isEmpty()) {
                 Logger.error(this, "Failed to load searchProducts query");
                 return Map.of("errors", "Failed to load searchProducts query");
@@ -299,7 +307,7 @@ public class ShopifyService {
      * @return Collection data as a Map
      */
     public Map<String, Object> getCollectionById(String collectionId) {
-        String query = loadQueryFromFileasset("getCollectionById.gql");
+        String query = loadQueryAndReplaceFragments("getCollectionById.gql");
         if (query.isEmpty()) {
             Logger.error(this, "Failed to load getCollectionById query");
             return Map.of("errors", "Failed to load searchCollections query");
@@ -319,7 +327,7 @@ public class ShopifyService {
     * @return Collection data as a Map
     */
    public Map<String, Object> getCollectionByIdWithOptions(ProductSearcher searcher) {
-      String query = loadQueryFromFileasset("getCollectionById.gql");
+      String query = loadQueryAndReplaceFragments("getCollectionById.gql");
       if (query.isEmpty()) {
          Logger.error(this, "Failed to load getCollectionById query");
          return Map.of("errors", "Failed to load searchCollections query");
@@ -343,7 +351,7 @@ public class ShopifyService {
      * @return
      */
     public Map<String, Object> searchCollections(ProductSearcher searcher) {
-        String query = loadQueryFromFileasset("searchCollections.gql");
+        String query = loadQueryAndReplaceFragments("searchCollections.gql");
         if (query.isEmpty()) {
             Logger.error(this, "Failed to load searchCollections query");
             return Map.of("errors", "Failed to load searchCollections query");

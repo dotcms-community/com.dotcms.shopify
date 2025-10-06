@@ -6,7 +6,8 @@
 #set($collection = $shopifyData.data.collection)
 #set($products = $collection.products.edges)
 
-
+<!-- Generate unique ID for this instance -->
+#set($uniqueId = $UtilMethods.getRandomString(8))
 
 <!-- Include the product grid component -->
 #dotParse("/application/shopify/vtl/components/shopify-product-carousel.vtl")
@@ -18,87 +19,59 @@
     #end
 </div>
 
-
-<textarea id="productsData" style="display: none;visibility: hidden;">
+<!-- Use unique ID for products data -->
+<textarea id="productsData-${uniqueId}" style="display: none;visibility: hidden;">
     $products.toString()
 </textarea>
-<script>
-    const productJson = JSON.parse(document.getElementById("productsData").value);
-    const productsToShow = $productsToShow || productJson.length;
-    
-    // Extract product nodes from the edges structure and limit to productsToShow
-    const productNodes = productJson.map(edge => edge.node).slice(0, productsToShow);
-    console.log("productNodes:", productNodes);
-    console.log("Limited to", productsToShow, "products out of", productJson.length, "total");
-    
-    // Set the products data on the grid component
-    document.addEventListener('DOMContentLoaded', function() {
-        const productGrid = document.querySelector('shopify-product-grid');
-        if (productGrid) {
-            productGrid.setAttribute('products', JSON.stringify(productNodes));
-            // Call reloadGrid to refresh the component with new data
-            productGrid.reloadGrid();
-        }
-    });
 
-    // Global function to reload the product grid with new products
-    window.reloadProductGrid = function(newProducts) {
-        const productGrid = document.querySelector('shopify-product-grid');
-        if (productGrid) {
-            if (Array.isArray(newProducts)) {
-                productGrid.updateProducts(newProducts);
-                console.log('Product grid reloaded with', newProducts.length, 'products');
-            } else {
-                console.error('reloadProductGrid expects an array of products');
-            }
-        } else {
-            console.error('Product grid component not found');
-        }
-    };
-</script>
+<!-- Wrap everything in a unique container -->
+<div class="shopify-collection-container" data-collection-id="${uniqueId}">
+    <script>
+        (function() {
+            // Create scoped variables for this instance
+            const containerId = '${uniqueId}';
+            const container = document.querySelector('[data-collection-id="' + containerId + '"]');
+            const productJson = JSON.parse(document.getElementById("productsData-" + containerId).value);
+            const productsToShow = $productsToShow || productJson.length;
+            
+            // Extract product nodes from the edges structure and limit to productsToShow
+            const productNodes = productJson.map(edge => edge.node).slice(0, productsToShow);
+            console.log("productNodes for container " + containerId + ":", productNodes);
+            console.log("Limited to", productsToShow, "products out of", productJson.length, "total");
+            
+            // Set the products data on THIS grid component
+            document.addEventListener('DOMContentLoaded', function() {
+                const productGrid = container.querySelector('shopify-product-grid');
+                if (productGrid) {
+                    productGrid.setAttribute('products', JSON.stringify(productNodes));
+                    // Call reloadGrid to refresh the component with new data
+                    productGrid.reloadGrid();
+                }
+            });
 
-<!-- Product Grid -->
-<shopify-product-grid
-    products="[]"
-    columns="4"
-    gap="1.5rem">
-</shopify-product-grid>
+            // Create instance-specific function to reload THIS product grid
+            container.reloadProductGrid = function(newProducts) {
+                const productGrid = container.querySelector('shopify-product-grid');
+                if (productGrid) {
+                    if (Array.isArray(newProducts)) {
+                        productGrid.updateProducts(newProducts);
+                        console.log('Product grid ' + containerId + ' reloaded with', newProducts.length, 'products');
+                    } else {
+                        console.error('reloadProductGrid expects an array of products');
+                    }
+                } else {
+                    console.error('Product grid component not found in container ' + containerId);
+                }
+            };
+        })();
+    </script>
 
-<style>
-    .collection-header {
-        text-align: center;
-        margin-bottom: 3rem;
-        padding: 2rem 1rem;
-    }
+    <!-- Product Grid -->
+    <shopify-product-grid
+        products="[]"
+        columns="4"
+        gap="1.5rem">
+    </shopify-product-grid>
+</div>
 
-    .collection-title {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 1rem;
-        line-height: 1.2;
-    }
-
-    .collection-description {
-        font-size: 1.125rem;
-        color: #64748b;
-        max-width: 600px;
-        margin: 0 auto;
-        line-height: 1.6;
-    }
-
-    @media (max-width: 768px) {
-        .collection-header {
-            margin-bottom: 2rem;
-            padding: 1rem;
-        }
-
-        .collection-title {
-            font-size: 2rem;
-        }
-
-        .collection-description {
-            font-size: 1rem;
-        }
-    }
-</style>
+<!-- ... existing code ... -->

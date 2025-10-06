@@ -1,15 +1,5 @@
 package com.dotcms.shopify.osgi;
 
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableColumnField;
-import com.dotcms.contenttype.model.field.ImmutableCustomField;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableRowField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.shopify.util.AppKey;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -21,7 +11,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import common.Assert;
 import io.vavr.control.Try;
@@ -30,16 +19,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.commons.io.IOUtils;
 
-public class ActivatorUtil {
+public class FileMoverUtil {
 
    private final File installedAppYaml = new File(
            ConfigUtils.getAssetPath() + File.separator + "server" + File.separator + "apps" + File.separator
@@ -49,7 +36,9 @@ public class ActivatorUtil {
            "87ae3b42-4822-4ba8-b87c-258155f7012a",
            "97a69459-e0aa-4278-bfd8-5797ab59e9db",
            "f92e8cb0-1f95-4935-8782-92b62fc84001",
-           "db87ccb0-1f95-4935-8782-92b62fc84034"
+           "db87ccb0-1f95-4935-8782-92b62fc84034",
+
+
    };
 
    public static List<JarEntry> listFilesInPackage(@Nonnull String packagePathStr) {
@@ -58,7 +47,7 @@ public class ActivatorUtil {
       List<JarEntry> jarEntries = new ArrayList<>();
 
       try {
-         String jarPath = ActivatorUtil.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+         String jarPath = FileMoverUtil.class.getProtectionDomain().getCodeSource().getLocation().getPath();
          try (java.util.jar.JarFile jarFile = new java.util.jar.JarFile(jarPath)) {
             java.util.Enumeration<java.util.jar.JarEntry> entries = jarFile.entries();
             while (entries.hasMoreElements()) {
@@ -227,67 +216,6 @@ public class ActivatorUtil {
 
       installedAppYaml.delete();
       CacheLocator.getAppsCache().clearCache();
-
-   }
-
-   /**
-    * Automatically creates a content type with all the custom fields for testing
-    *
-    * @throws Exception
-    */
-   public void createShopifyExampleContentType() throws Exception {
-      ContentTypeAPI typeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-      ContentType type = Try.of(() -> typeAPI.find("ShopifyExample")).getOrNull();
-
-      if (!UtilMethods.isSet(type)) {
-         type = typeAPI.save(
-                 ImmutableSimpleContentType.builder().name("Shopify Example").id(UUIDGenerator.generateUuid())
-                         .host(Host.SYSTEM_HOST).folder(Folder.SYSTEM_FOLDER).variable("ShopifyExample")
-
-                         .build());
-      }
-
-      List<Field> fields = new ArrayList<>();
-
-      LinkedHashMap<String, Field> fieldMap = new LinkedHashMap<>(type.fieldMap());
-
-      fieldMap.put("RowField00001",
-              ImmutableRowField.builder().name("RowField00001").id(UUIDGenerator.generateUuid()).sortOrder(0)
-                      .variable("RowField00001").build());
-      fieldMap.put("ColumnField00001",
-              ImmutableColumnField.builder().name("ColumnField00001").id(UUIDGenerator.generateUuid()).sortOrder(10)
-                      .variable("ColumnField00001").build());
-
-      fieldMap.put("title",
-              ImmutableTextField.builder().name("Title").id(fieldUUIDs[0]).contentTypeId(type.id()).variable("title")
-                      .indexed(true).sortOrder(20).searchable(true).listed(true).build());
-
-      fieldMap.put("shopifyProduct",
-              ImmutableCustomField.builder().name("Shopify Product").id(fieldUUIDs[1]).contentTypeId(type.id())
-                      .variable("shopifyProduct").indexed(true).sortOrder(31).searchable(true).listed(false)
-                      .values("#dotParse(\"/application/shopify/vtl/custom-fields/shopify-product-picker-custom-field.vtl\")\n")
-                      .build());
-
-      fieldMap.put("shopifyCollection",
-              ImmutableCustomField.builder().name("Shopify Collection").id(fieldUUIDs[2]).contentTypeId(type.id())
-                      .variable("shopifyCollection").indexed(true).sortOrder(42).searchable(true).listed(false)
-                      .values("#dotParse(\"/application/shopify/vtl/custom-fields/shopify-collection-picker-custom-field.vtl\")\n")
-                      .build());
-
-      List<FieldVariable> fieldVars = new ArrayList<>();
-      fieldVars.add(
-              ImmutableFieldVariable.builder().name("customFieldOptions").fieldId(fieldMap.get("shopifyProduct").id())
-                      .key("customFieldOptions")
-                      .value("{\"showAsModal\": true,  \"width\": \"600px\",  \"height\": \"675px\"}").build());
-
-      fieldVars.add(ImmutableFieldVariable.builder().name("customFieldOptions")
-              .fieldId(fieldMap.get("shopifyCollection").id()).key("customFieldOptions")
-              .value("{\"showAsModal\": true,  \"width\": \"600px\",  \"height\": \"675px\"}").build());
-
-      typeAPI.save(type, new ArrayList(fieldMap.values()), fieldVars);
-
-      String systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme().getId();
-      APILocator.getWorkflowAPI().saveSchemeIdsForContentType(type, Set.of(systemWorkflowScheme));
 
    }
 

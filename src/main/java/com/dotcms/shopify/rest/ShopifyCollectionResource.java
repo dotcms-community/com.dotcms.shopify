@@ -2,15 +2,17 @@ package com.dotcms.shopify.rest;
 
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.shopify.api.ProductSearchParams;
+import com.dotcms.shopify.api.ShopifySearchParams;
 import com.dotcms.shopify.api.ShopifyAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONObject;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BeanParam;
@@ -48,7 +50,7 @@ public class ShopifyCollectionResource implements Serializable {
     public final Response byId(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @BeanParam final ProductSearchParams searchParams) {
+            @BeanParam final ShopifySearchParams searchParams) {
 
         checkUser(request, response);
 
@@ -81,7 +83,7 @@ public class ShopifyCollectionResource implements Serializable {
     public final Response searchCollections(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @BeanParam final ProductSearchParams searchParams) {
+            @BeanParam final ShopifySearchParams searchParams) {
 
         checkUser(request, response);
 
@@ -91,8 +93,12 @@ public class ShopifyCollectionResource implements Serializable {
 
         Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         ShopifyAPI api = ShopifyAPI.api(host);
+
+        Map<String,Object> json = api.searchCollections(searchParams.toProductSearcher());
+
+
         return Response
-                .ok(api.searchCollections(searchParams.toProductSearcher()))
+                .ok(json)
                 .build();
 
     }
@@ -110,7 +116,7 @@ public class ShopifyCollectionResource implements Serializable {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public final Response redirectToShopifyCollection(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response, @BeanParam final ProductSearchParams searchParams)
+            @Context final HttpServletResponse response, @BeanParam final ShopifySearchParams searchParams)
             throws URISyntaxException {
 
         checkUser(request, response);

@@ -4,8 +4,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.shopify.api.ShopifyAPI;
 import com.dotcms.shopify.api.ProductSearcher;
-import com.dotcms.shopify.api.ProductSearchParams;
-import com.dotcms.shopify.api.SortKey;
+import com.dotcms.shopify.api.ShopifySearchParams;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -23,7 +22,6 @@ import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -48,7 +46,7 @@ public class ShopifyProductResource implements Serializable {
     public final Response byId(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @BeanParam final ProductSearchParams searchParams) {
+            @BeanParam final ShopifySearchParams searchParams) {
         if (UtilMethods.isEmpty(searchParams.id)) {
             return Response.status(404).build();
         }
@@ -70,7 +68,7 @@ public class ShopifyProductResource implements Serializable {
     public final Response searchProducts(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @BeanParam final ProductSearchParams searchParams) {
+            @BeanParam final ShopifySearchParams searchParams) {
 
         final User user = new WebResource.InitBuilder(request, response)
                 .rejectWhenNoUser(true)
@@ -150,7 +148,7 @@ public class ShopifyProductResource implements Serializable {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public final Response redirectToShopifyProduct(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response, @BeanParam final ProductSearchParams searchParams)
+            @Context final HttpServletResponse response, @BeanParam final ShopifySearchParams searchParams)
             throws URISyntaxException {
 
         final User user = new WebResource.InitBuilder(request, response).rejectWhenNoUser(true)

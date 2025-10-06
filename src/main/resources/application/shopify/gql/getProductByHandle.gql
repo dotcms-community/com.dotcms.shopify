@@ -1,5 +1,5 @@
-query GetProduct($id: ID!, $firstVariants: Int = 5) {
-  product(id: $id) {
+query byHandle($handle: String!, $firstVariants: Int = 5) {
+    product(handle: $handle) {
     ...ProductFields
     variants(first: $firstVariants) {
       edges {

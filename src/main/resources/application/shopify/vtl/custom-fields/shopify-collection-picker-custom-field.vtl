@@ -7,6 +7,7 @@
             super();
             this.attachShadow({ mode: "open" });
             this.selectedCollectionKey = "selectedShopifyCollection";
+            this.contentImageField="shopifyCollectionImage";
 
             this.state = {
                 selected: null,
@@ -35,6 +36,8 @@
                 { value: 'MANUAL', label: 'Manual' },
                 { value: 'RELEVANCE', label: 'Relevance' }
             ];
+
+            this.hideOtherImageField();
         }
 
         static get observedAttributes() {
@@ -46,8 +49,9 @@
         }
 
         connectedCallback() {
+
             this.render();
-          
+
             this.loadSelectedFromContentField();
             this.shadowRoot.addEventListener("click", this.handleDocumentClick.bind(this));
         }
@@ -127,7 +131,7 @@
                 if (contentFieldElement && contentFieldElement.value) {
                     console.debug("Collection field value:", contentFieldElement.value);
                     const fieldValue = contentFieldElement.value.trim();
-                    
+
                     if (fieldValue) {
                         try {
                             // Try to parse as JSON first (new format)
@@ -135,7 +139,7 @@
                             console.debug("Parsed JSON:", data);
                             if (data && data.id) {
                                 await this.loadCollectionById(data.id);
-                                
+
                                 // Restore saved configuration values
                                 if (data.limit !== undefined) {
                                     this.state.config.limit = data.limit;
@@ -146,10 +150,10 @@
                                 if (data.enablePagination !== undefined) {
                                     this.state.config.enablePagination = data.enablePagination;
                                 }
-                                
+
                                 console.debug("Loaded collection from JSON:", data);
                                 console.debug("Restored config:", this.state.config);
-                                
+
                                 // Re-render to show the restored configuration
                                 this.render();
                             }
@@ -163,6 +167,25 @@
             }
         }
 
+        resolvePreviewImage(data) {
+
+            if(!data) {
+                return;
+            }
+
+            console.debug("resolvePreviewImage", data);
+            let myImage = data?.products?.edges[0]?.node?.featuredImage
+                    ? data?.products?.edges[0]?.node?.featuredImage
+                    : data.products?.edges[0]?.node?.media?.edges[0]?.node?.previewImage
+                          ? data.products.edges[0].node.media.edges[0].node.previewImage
+                          : data.image;
+
+            return myImage;
+
+
+        }
+
+
         saveSelectedToContentField() {
             if (this.contentField && document.getElementById(this.contentField)) {
                 const contentFieldElement = document.getElementById(this.contentField);
@@ -174,21 +197,28 @@
                         limit: this.state.config.limit,
                         sortKey: this.state.config.sortKey,
                         enablePagination: this.state.config.enablePagination
-                    
+
                 } : null;
 
                 const value = data ? JSON.stringify(data) : "";
                 contentFieldElement.value = value;
                 console.debug("Updated hidden field:", this.contentField, "with JSON:", value);
 
+                if(data && data.id){
+                    this.importShopifyImage();
+                    this.tryToFillOtherFields();
+                }
+
+
                 // Trigger a change event to notify form systems
                 contentFieldElement.dispatchEvent(new Event("change", { bubbles: true }));
-                this.tryToFillOtherFields();
+
+
             } else {
                 console.warn("Content field element not found:", this.contentField);
             }
 
-            this.tryToFillOtherFields();
+
         }
 
         tryToFillOtherFields() {
@@ -199,6 +229,7 @@
 
             // title
             this.setNodeValue("title", this.state.selected.title);
+            this.setNodeValue("widgetTitle", this.state.selected.title);
             this.setNodeValue("collectionTitle", this.state.selected.title);
             this.setNodeValue("widgetTitle", this.state.selected.title);
 
@@ -207,6 +238,113 @@
             this.setNodeValue("slug", this.state.selected.handle);
             this.setNodeValue("urlTitle", this.state.selected.handle);
         }
+
+        _imageMetadata(temp) {
+            console.debug("_imageMetadata.temp:", temp);
+            const fileInfo = temp;
+            console.debug("_imageMetadata.fileInfo:", fileInfo);
+            const metadata = fileInfo?.metadata;
+
+            const width = fileInfo?.metadata?.width;
+            const height = fileInfo?.metadata?.height;
+
+            const { length: fileSize, fileName: name } = temp;
+            const extension = name.split(".").pop();
+
+            return {
+                name,
+                contentType: `image/${extension}`,
+                editableAsText: false,
+                isImage: true,
+                fileSize,
+                width,
+                height
+            }
+        }
+
+        hideOtherImageField(){
+            const labelDiv = document.getElementById(`${this.contentImageField}_tag`);
+            if(labelDiv) {
+                labelDiv.setAttribute("style", "display:none");
+            }
+
+            const container = document.getElementById(`${this.contentImageField}_field`);
+            if(container) {
+                container.setAttribute("style", "display:none");
+            }
+        }
+
+        async importShopifyImage() {
+            let data = this.state.selected;
+            if(!data) {
+                return;
+            }
+            console.debug("importShopifyImage", data);
+            let image = this.resolvePreviewImage(data);
+            if(!image) {
+                return;
+            }
+            console.debug("importShopifyImage", image);
+            if (!image) {
+                return;
+            }
+
+            const url= image.url;
+
+
+            const resp = await fetch("/api/v1/temp/byUrl", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    remoteUrl: url
+                })
+            })
+            if (!resp.ok) {
+                throw new Error(resp.statusText);
+            }
+            const dataJson = await resp.json();
+
+            const tempImage = dataJson?.tempFiles[0];
+            if(!tempImage) {
+                return;
+            }
+            console.debug("tempImage", tempImage);
+
+            const container = document.getElementById(`${this.contentImageField}_field`);
+            if(!container) {
+                console.log("container not found");
+                return;
+            }
+
+            const hiddenFields = container.querySelectorAll('input[type="hidden"][id^="binary-field-input-binary"]') ;
+
+            const binaryField = hiddenFields.length > 0 ? hiddenFields[0] : null;
+
+            console.debug("binaryField.value", binaryField.value);
+            binaryField.value  = tempImage.id;
+
+
+            const thumbnailDiv = container.querySelector('div.thumbnail');
+            if(!thumbnailDiv) {
+                return;
+            }
+            console.debug("thumbnailDiv", thumbnailDiv);
+            const imgTag = thumbnailDiv ? thumbnailDiv.querySelector('img') : null;
+
+            if(!imgTag) {
+                return;
+            }
+            console.debug("imgTag", imgTag);
+            imgTag.src=`/contentAsset/image/${tempImage.id}/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/${tempImage.id}.png`;
+
+        }
+
+
+
+
+
 
         findNode(nodeId) {
             let ele = dijit.byId(nodeId);
@@ -263,7 +401,7 @@
         }
 
         async handleSearchInput(e) {
-            console.debug("e", e);
+            //console.debug("e", e);
             const query = e.target.value;
             this.state.search = query;
             this.state.error = "";
@@ -296,7 +434,13 @@
                     throw new Error(resp.statusText);
                 }
                 const json = await resp.json();
-                console.debug("json", json.data.collections);
+
+                if(json.errors) {
+                    throw new Error(typeof(json.errors) === 'string' ? json.errors : json.errors[0].message);
+                }
+
+
+
 
                 this.state.pageInfo = json.data.collections.pageInfo;
                 console.debug("pageInfo:", this.state.pageInfo);
@@ -311,7 +455,7 @@
                 this.state.searching = false;
                 this.updateResults();
             } catch (error) {
-                this.state.error = "Error searching collections.";
+                this.state.error = "Error searching collections: " + error.message;
                 this.state.searching = false;
                 this.updateResults();
             }
@@ -330,16 +474,20 @@
         }
 
         updateResults() {
+            console.debug("updateResults");
             const resultsContainer = this.shadowRoot.querySelector(".results");
             const paginationContainer = this.shadowRoot.querySelector(".pagination-container");
-
+            console.debug("this.state.results:", this.state.results);
             if (resultsContainer) {
                 resultsContainer.innerHTML = this.state.searching
                     ? '<div class="spinner"></div>'
                     : this.state.results
                           .map(
                               (collection, i) => {
-                let myImage = collection.image ? collection.image : collection.products.edges[0].node.media.edges[0].node.previewImage;
+                let myImage =  this.resolvePreviewImage(collection);
+
+
+
                 console.debug("myImage", myImage);
                 return `
                         <div class="collection-card" data-idx="${i}" tabindex="0">
@@ -403,6 +551,7 @@
 
             this.state.selected = collection;
             this.saveSelectedToContentField();
+
             this.tryToFillOtherFields();
             this.clearSearch(); // This already calls render()
 
@@ -429,7 +578,7 @@
         handleConfigChange(field, value) {
             this.state.config[field] = value;
             this.saveSelectedToContentField();
-            
+
             // If search is active, re-search with new config
             if (this.state.search.length >= 3) {
                 this.performSearch();
@@ -452,15 +601,15 @@
             <div class="config-row">
               <label class="config-label">Sort by:</label>
               <select class="config-select" onchange="this.getRootNode().host.handleConfigChange('sortKey', this.value)">
-                ${this.sortOptions.map(option => 
+                ${this.sortOptions.map(option =>
                   `<option value="${option.value}" ${this.state.config.sortKey === option.value ? 'selected' : ''}>${option.label}</option>`
                 ).join('')}
               </select>
             </div>
             <div class="config-row">
               <label class="config-label">
-                <input type="checkbox" class="config-checkbox" 
-                       ${this.state.config.enablePagination ? 'checked' : ''} 
+                <input type="checkbox" class="config-checkbox"
+                       ${this.state.config.enablePagination ? 'checked' : ''}
                        onchange="this.getRootNode().host.handleConfigChange('enablePagination', this.checked)">
                 Enable pagination
               </label>
@@ -469,6 +618,10 @@
         </div>
       `;
         }
+
+
+
+
 
 
 
@@ -483,8 +636,9 @@
               `
               }
           console.debug("collection", collection);
-            let myImage = collection?.products?.edges[0]?.node?.featuredImage;
-            myImage = myImage ? myImage : collection?.products?.edges[0]?.node?.images.edges[0].node;
+
+          let myImage =  this.resolvePreviewImage(collection);
+
 
             return `
                     <div class="selected-collection">
@@ -561,13 +715,13 @@
 
             return `
         <div class="pagination-controls">
-          <button class="pagination-btn ${hasPrevious ? "" : "disabled"}" 
-                  ${hasPrevious ? "" : "disabled"} 
+          <button class="pagination-btn ${hasPrevious ? "" : "disabled"}"
+                  ${hasPrevious ? "" : "disabled"}
                   onclick="this.getRootNode().host.handlePreviousPage()">
             ← Previous
           </button>
-          <button class="pagination-btn ${hasNext ? "" : "disabled"}" 
-                  ${hasNext ? "" : "disabled"} 
+          <button class="pagination-btn ${hasNext ? "" : "disabled"}"
+                  ${hasNext ? "" : "disabled"}
                   onclick="this.getRootNode().host.handleNextPage()">
             Next →
           </button>
@@ -612,7 +766,7 @@
         .pagination-btn { padding: 8px 16px; border: 1px solid #0057d9; background: #fff; color: #0057d9; cursor: pointer; border-radius: 6px; font-size: 14px; font-weight: 500; transition: all 0.2s; }
         .pagination-btn:hover:not(.disabled) { background: #0057d9; color: white; }
         .pagination-btn.disabled { background: #f5f5f5; color: #ccc; border-color: #ddd; cursor: not-allowed; opacity: 0.6; }
-        
+
         /* Configuration UI Styles */
         .config-section { background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 6px; padding: 15px; margin: 15px 0; box-sizing: border-box; max-width: 100%; flex: 1 1 260px; }
         .config-header h4 { margin: 0 0 12px 0; font-size: 16px; color: #333; font-weight: 600; }
@@ -623,7 +777,7 @@
         .config-select:focus { outline: none; border-color: #0057d9; box-shadow: 0 0 0 2px rgba(0, 87, 217, 0.2); }
         .config-checkbox { margin: 0; cursor: pointer; }
         .config-checkbox:checked { accent-color: #0057d9; }
-        
+
         /* Responsive adjustments */
         @media (max-width: 600px) {
           .selected-collection { flex-direction: column; }

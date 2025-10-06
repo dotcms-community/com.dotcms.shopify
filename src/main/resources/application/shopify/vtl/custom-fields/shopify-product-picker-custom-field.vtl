@@ -22,6 +22,8 @@
             };
             this.apiEndpoint = "/api/v1/shopify/product";
             this.isProcessingSelection = false; // Flag to prevent multiple simultaneous selections
+            this.contentImageField="shopifyProductImage";
+            this.hideOtherImageField()
         }
 
         static get observedAttributes() {
@@ -95,6 +97,7 @@
             }
 
             this.tryToFillOtherFields();
+            this.importShopifyImage();
         }
 
         tryToFillOtherFields() {
@@ -220,6 +223,119 @@
                 this.updateResults();
             }
         }
+
+        _imageMetadata(temp) {
+            console.debug("_imageMetadata.temp:", temp);
+            const fileInfo = temp;
+            console.debug("_imageMetadata.fileInfo:", fileInfo);
+            const metadata = fileInfo?.metadata;
+
+            const width = fileInfo?.metadata?.width;
+            const height = fileInfo?.metadata?.height;
+
+            const { length: fileSize, fileName: name } = temp;
+            const extension = name.split(".").pop();
+
+            return {
+                name,
+                contentType: `image/${extension}`,
+                editableAsText: false,
+                isImage: true,
+                fileSize,
+                width,
+                height
+            }
+        }
+
+        hideOtherImageField(){
+            const labelDiv = document.getElementById(`${this.contentImageField}_tag`);
+            if(labelDiv) {
+                labelDiv.setAttribute("style", "display:none");
+            }
+
+            const container = document.getElementById(`${this.contentImageField}_field`);
+            if(container) {
+                container.setAttribute("style", "display:none");
+            }
+        }
+        resolvePreviewImage(){
+            let data = this.state.selected;
+            return data?.featuredImage || {};
+        }
+
+
+
+        async importShopifyImage() {
+            let data = this.state.selected;
+            if(!data) {
+                return;
+            }
+            console.debug("importShopifyImage", data);
+            let image = this.resolvePreviewImage(data);
+            if(!image) {
+                return;
+            }
+            console.debug("importShopifyImage", image);
+            if (!image) {
+                return;
+            }
+
+            const url= image.url;
+
+
+            const resp = await fetch("/api/v1/temp/byUrl", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    remoteUrl: url
+                })
+            })
+            if (!resp.ok) {
+                throw new Error(resp.statusText);
+            }
+            const dataJson = await resp.json();
+
+            const tempImage = dataJson?.tempFiles[0];
+            if(!tempImage) {
+                return;
+            }
+            console.debug("tempImage", tempImage);
+
+            const container = document.getElementById(`${this.contentImageField}_field`);
+            if(!container) {
+                console.log("container not found");
+                return;
+            }
+
+            const hiddenFields = container.querySelectorAll('input[type="hidden"][id^="binary-field-input-binary"]') ;
+
+            const binaryField = hiddenFields.length > 0 ? hiddenFields[0] : null;
+
+            console.debug("binaryField.value", binaryField.value);
+            binaryField.value  = tempImage.id;
+
+
+            const thumbnailDiv = container.querySelector('div.thumbnail');
+            if(!thumbnailDiv) {
+                return;
+            }
+            console.debug("thumbnailDiv", thumbnailDiv);
+            const imgTag = thumbnailDiv ? thumbnailDiv.querySelector('img') : null;
+
+            if(!imgTag) {
+                return;
+            }
+            console.debug("imgTag", imgTag);
+            imgTag.src=`/contentAsset/image/${tempImage.id}/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/${tempImage.id}.png`;
+
+        }
+
+
+
+
+
 
         async handleNextPage() {
             if (this.state.pageInfo.hasNextPage && this.state.pageInfo.endCursor) {

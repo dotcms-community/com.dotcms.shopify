@@ -1,6 +1,7 @@
 package com.dotcms.shopify.util;
 
 import com.dotcms.cache.CacheValue;
+import com.dotcms.cache.CacheValueImpl;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
@@ -46,7 +47,7 @@ public class ShopifyCache implements Cachable {
   }
 
   public void put(CacheType type, String key, Object valueIn, long ttl) {
-    CacheValue cacheObject = new CacheValue(valueIn, ttl);
+    CacheValue cacheObject = new CacheValueImpl(valueIn, ttl);
     cache.put(type.name() + key, cacheObject, getPrimaryGroup());
   }
 

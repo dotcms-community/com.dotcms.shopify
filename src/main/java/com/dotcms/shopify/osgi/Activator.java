@@ -12,7 +12,6 @@ import com.dotcms.shopify.listener.ShopifyContentListener;
 import com.dotcms.shopify.rest.ShopifyCollectionResource;
 import com.dotcms.shopify.rest.ShopifyInterceptor;
 import com.dotcms.shopify.rest.ShopifyProductResource;
-import com.dotcms.shopify.util.ShopifyApp;
 import com.dotcms.shopify.viewtool.DotShopifyToolInfo;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.APILocator;
@@ -40,7 +39,7 @@ public class Activator extends GenericBundleActivator {
 
         Logger.info(Activator.class.getName(), "Starting Shopify Plugin");
 
-        ActivatorUtil activatorUtil = new ActivatorUtil();
+        FileMoverUtil activatorUtil = new FileMoverUtil();
         this.initializeServices(context);
 
         // Adding APP yaml
@@ -63,7 +62,8 @@ public class Activator extends GenericBundleActivator {
 
         activatorUtil.copyFromJar("/application/shopify/");
 
-        activatorUtil.createShopifyExampleContentType();
+        ContentTypeUtil.createShopifyProductType();
+        ContentTypeUtil.createShopifyCollectionType();
 
         // this should be done last in case the bundle fails to start
         RestServiceUtil.addResource(ShopifyProductResource.class);
@@ -92,7 +92,7 @@ public class Activator extends GenericBundleActivator {
         filterWebInterceptorProvider.getDelegate(InterceptorFilter.class);
 
         Logger.info(Activator.class.getName(), "Removing Shopify APP");
-        new ActivatorUtil().deleteYml();
+        new FileMoverUtil().deleteYml();
 
         localSystemEventsAPI.unsubscribe(shopifyContentListener);
         localSystemEventsAPI.unsubscribe(shopifyAppListener);

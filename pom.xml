@@ -26,7 +26,7 @@
         <dependency>
             <groupId>com.dotcms</groupId>
             <artifactId>dotcms-core</artifactId>
-            <version>25.05.20-1</version>
+            <version>25.10.03-01</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

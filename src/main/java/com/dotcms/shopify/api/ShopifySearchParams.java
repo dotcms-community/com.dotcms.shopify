@@ -8,7 +8,7 @@ import javax.ws.rs.DefaultValue;
  * JAX-RS parameter class for product search operations.
  * Converts to immutable ProductSearcher using builder pattern.
  */
-public class ProductSearchParams {
+public class ShopifySearchParams {
 
     @QueryParam("before")
     @DefaultValue("AFTER")
@@ -42,7 +42,7 @@ public class ProductSearchParams {
     /**
      * Default constructor required by JAX-RS
      */
-    public ProductSearchParams() {
+    public ShopifySearchParams() {
         // JAX-RS will set values via field injection
     }
 

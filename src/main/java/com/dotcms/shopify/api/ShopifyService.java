@@ -1,9 +1,8 @@
 package com.dotcms.shopify.api;
 
 import com.dotcms.shopify.api.ShopifyAPI.BEFORE_AFTER;
-import com.dotcms.shopify.osgi.ActivatorUtil;
+import com.dotcms.shopify.osgi.FileMoverUtil;
 import com.dotcms.shopify.util.AppKey;
-import com.dotcms.shopify.util.ShopifyApp;
 import com.dotcms.shopify.util.ShopifyApp;
 import com.dotcms.shopify.util.ShopifyCache;
 import com.dotcms.shopify.util.ShopifyCache.CacheType;
@@ -24,12 +23,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -62,7 +59,7 @@ public class ShopifyService {
             cacheMap = (Map<String, String>) cache.get(CacheType.GRAPHQL, "FRAGMENT_MAP");
             if (cacheMap == null) {
                 Map<String, String> fragmentMap = new HashMap<>();
-                List<String> fragmentNames = ActivatorUtil.listFilesInPackage("/application/shopify/gql/").stream().filter(e->!e.isDirectory()).map(e->e.getName()).collect(Collectors.toList());
+                List<String> fragmentNames = FileMoverUtil.listFilesInPackage("/application/shopify/gql/").stream().filter(e->!e.isDirectory()).map(e->e.getName()).collect(Collectors.toList());
                 fragmentNames
                         .stream()
                         .filter(n -> n.contains("fragment.gql"))
@@ -131,7 +128,7 @@ public class ShopifyService {
             Map<String, String> config = getShopifyConfig();
             if (config.isEmpty()) {
                 Logger.error(this, "No Shopify configuration found for host: " + host.getHostname());
-                return new JSONObject();
+                return new JSONObject(Map.of("errors", "No Shopify configuration found for host: " + host.getHostname()));
             }
 
             String storeName = config.get(AppKey.STORE_NAME.name());

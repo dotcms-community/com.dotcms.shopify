@@ -19,7 +19,10 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BeanParam;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
@@ -94,6 +97,59 @@ public class ShopifyProductResource implements Serializable {
         return searchProducts(api, productSearcher);
 
     }
+
+    /**
+     * Searches for Shopify products based on the provided search parameters.
+     *
+     * @param request the HTTP servlet request containing user and session information
+     * @param response the HTTP servlet response for sending the result
+     * @param searchParams the search parameters for querying Shopify products
+     * @return a Response object containing the search results in JSON format or an error message if the input is invalid
+     */
+    /**
+     * Executes a raw GraphQL query against the Shopify API.
+     *
+     * @param request the HTTP servlet request containing user and session information
+     * @param response the HTTP servlet response for sending the result
+     * @param jsonBody the JSON body containing the GraphQL query and optional variables
+     * @return a Response object containing the GraphQL query results in JSON format
+     */
+    @POST
+    @Path("/_gql")
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public final Response executeGraphQLQuery(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            final String jsonBody) {
+
+        final User user = new WebResource.InitBuilder(request, response)
+                .rejectWhenNoUser(true)
+                .requiredFrontendUser(true)
+                .requiredBackendUser(true)
+                .init()
+                .getUser();
+
+        if (UtilMethods.isEmpty(jsonBody)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("errors", "JSON body with GraphQL query is required"))
+                    .build();
+        }
+
+        Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        ShopifyAPI api = ShopifyAPI.api(currentHost);
+
+        try {
+            Map<String, Object> result = api.rawQuery(jsonBody);
+            return Response.ok(result).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("errors", "Invalid GraphQL query: " + e.getMessage()))
+                    .build();
+        }
+    }
+
 
     private Response searchProducts(ShopifyAPI api, ProductSearcher productSearcher) {
         if (UtilMethods.isSet(productSearcher.id)) {

@@ -101,6 +101,11 @@ public class ShopifyService {
             throw new DotRuntimeException(".gql query is empty " + queryFileName);
         }
 
+
+        for (Map.Entry<String, String> entry : getFragmentMap().entrySet()) {
+            query = query.replace("$" + entry.getKey(), entry.getValue());
+        }
+
         return query;
     }
 
@@ -118,10 +123,9 @@ public class ShopifyService {
      */
     public JSONObject executeGraphQLQuery(String query, Map<String, Object> variables) {
 
-        for (Map.Entry<String, String> entry : getFragmentMap().entrySet()) {
-            query = query.replace("$" + entry.getKey(), entry.getValue());
-        }
-        System.out.println("query:" + query);
+
+        final String finalQuery = query;
+        Logger.debug(this.getClass(), ()->"GRAPHQL QUERY:\n"  + finalQuery);
 
         try {
             // Get configuration
@@ -178,7 +182,7 @@ public class ShopifyService {
 
                     JSONArray errors = jsonResponse.optJSONArray("errors");
 
-                    if (errors != null && errors.length() > 0) {
+                    if (errors != null && !errors.isEmpty()) {
                         for (int i = 0; i < errors.length(); i++) {
                             Logger.error(this, "GraphQL request error:" + errors.getString(i));
                         }
@@ -201,9 +205,9 @@ public class ShopifyService {
         }
     }
 
-    public Map<String, Object> getProductByHandle(String productHandle) {
+    public Map<String, Object> getProductByHandle(String productHandle, int firstVariants) {
         String query = loadQueryFromFileasset("getProductByHandle.gql");
-        Map<String, Object> variables = Map.of("handle", productHandle);
+        Map<String, Object> variables = Map.of("handle", productHandle, "firstVariants", firstVariants);
         return executeGraphQLQuery(query, variables);
 
     }

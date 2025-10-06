@@ -13,6 +13,8 @@ public interface ShopifyAPI {
         return new ShopifyAPIImpl(host);
     }
 
+    Map<String, Object> productByHandle(String handle, int variantLimit);
+
     public Map<String, Object> productById(String id);
 
     public Map<String, Object> productByHandle(String handle);
@@ -30,6 +32,8 @@ public interface ShopifyAPI {
     public Map<String, Object> collectionById(String id);
 
     public Map<String, Object> rawQuery(String query);
+
+    Map<String, Object> rawQuery(String query, String json);
 
     public Map<String, Object> rawQuery(String query, Map<String, Object> variables);
 

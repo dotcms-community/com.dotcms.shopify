@@ -1,0 +1,569 @@
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .product-detail {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            padding: 40px;
+        }
+
+        .product-images {
+            position: relative;
+        }
+
+        .main-image {
+            width: 100%;
+            height: 500px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .main-image:hover {
+            transform: scale(1.02);
+        }
+
+        .variant-images {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .variant-thumb {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .variant-thumb:hover,
+        .variant-thumb.active {
+            border-color: #007bff;
+            transform: scale(1.05);
+        }
+
+        .product-info {
+            padding: 20px 0;
+        }
+
+        .product-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            line-height: 1.2;
+        }
+
+        .product-vendor {
+            font-size: 1.1rem;
+            color: #6c757d;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .product-type {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .price-section {
+            margin: 25px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            color: white;
+        }
+
+        .price {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .currency {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .product-options {
+            margin: 30px 0;
+        }
+
+        .option-group {
+            margin-bottom: 25px;
+        }
+
+        .option-label {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .option-values {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .option-value {
+            padding: 10px 16px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            background: white;
+        }
+
+        .option-value:hover {
+            border-color: #007bff;
+            background: #f8f9ff;
+        }
+
+        .option-value.selected {
+            border-color: #007bff;
+            background: #007bff;
+            color: white;
+        }
+
+        .product-description {
+            margin: 30px 0;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+
+        .description-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .description-content {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #555;
+        }
+
+        .description-content ul {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+
+        .description-content li {
+            margin-bottom: 8px;
+        }
+
+        .tags-section {
+            margin: 25px 0;
+        }
+
+        .tags-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: #28a745;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .add-to-cart-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .add-to-cart-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .add-to-cart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .product-meta {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .meta-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .meta-item:last-child {
+            border-bottom: none;
+        }
+
+        .meta-label {
+            font-weight: 600;
+            color: #6c757d;
+        }
+
+        .meta-value {
+            color: #2c3e50;
+        }
+
+        @media (max-width: 768px) {
+            .product-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+
+            .product-title {
+                font-size: 2rem;
+            }
+
+            .price {
+                font-size: 1.8rem;
+            }
+
+            .option-values {
+                gap: 8px;
+            }
+
+            .option-value {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
+    #set($productHandle = $request.getAttribute(""))
+
+        ## Get product data - you can pass handle or ID
+        #if($!request.getParameter("handle"))
+            #set($product = $dotshopify.getProductByHandle($request.getParameter("handle")))
+        #elseif($!request.getParameter("id"))
+            #set($product = $dotshopify.getProduct($request.getParameter("id")))
+        #else
+            ## Default example - you can change this
+            #set($product = $dotshopify.getProductByHandle("burton-freestyle-binding-2016"))
+        #end
+
+        #if($product && $product.data && $product.data.product)
+            #set($productData = $product.data.product)
+
+            <div class="product-detail">
+                <div class="product-grid">
+                    <!-- Product Images -->
+                    <div class="product-images">
+                        <img id="mainImage"
+                             src="$!{productData.featuredImage.url}"
+                             alt="$!{productData.featuredImage.altText}"
+                             class="main-image">
+
+                        #if($productData.variants && $productData.variants.edges)
+                            <div class="variant-images">
+                                #foreach($variant in $productData.variants.edges)
+                                    #if($variant.node.image && $variant.node.image.url)
+                                        <img src="$variant.node.image.url"
+                                             alt="$variant.node.title"
+                                             class="variant-thumb"
+                                             onclick="changeMainImage('$variant.node.image.url')"
+                                             data-variant-id="$variant.node.id">
+                                    #end
+                                #end
+                            </div>
+                        #end
+                    </div>
+
+                    <!-- Product Information -->
+                    <div class="product-info">
+                        <h1 class="product-title">$!{productData.title}</h1>
+
+                        #if($productData.vendor)
+                            <div class="product-vendor">by $productData.vendor</div>
+                        #end
+
+                        #if($productData.productType)
+                            <span class="product-type">$productData.productType</span>
+                        #end
+
+                        <!-- Price Section -->
+                        <div class="price-section">
+                            <div class="price">
+                                $$$productData.priceRange.minVariantPrice.amount
+                                <span class="currency">$productData.priceRange.minVariantPrice.currencyCode</span>
+                            </div>
+                            #if($productData.priceRange.minVariantPrice.amount != $productData.priceRange.maxVariantPrice.amount)
+                                <div style="font-size: 1rem; opacity: 0.9;">
+                                    Price range: $$$productData.priceRange.minVariantPrice.amount - $$$productData.priceRange.maxVariantPrice.amount
+                                </div>
+                            #end
+                        </div>
+
+                        <!-- Product Options -->
+                        #if($productData.options)
+                            <div class="product-options">
+                                #foreach($option in $productData.options)
+                                    <div class="option-group">
+                                        <div class="option-label">$option.name:</div>
+                                        <div class="option-values">
+                                            #foreach($value in $option.optionValues)
+                                                <div class="option-value"
+                                                     data-option="$option.name"
+                                                     data-value="$value.name"
+                                                     onclick="selectOption(this)">
+                                                    $value.name
+                                                </div>
+                                            #end
+                                        </div>
+                                    </div>
+                                #end
+                            </div>
+                        #end
+
+                        <!-- Add to Cart Section -->
+                        <div class="add-to-cart-section">
+                            <button class="add-to-cart-btn" onclick="addToCart()">
+                                Add to Cart
+                            </button>
+                            <div class="loading" id="loading">
+                                <div class="spinner"></div>
+                                <p>Adding to cart...</p>
+                            </div>
+                        </div>
+
+                        <!-- Product Meta -->
+                        <div class="product-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">Product ID:</span>
+                                <span class="meta-value">$productData.id</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Handle:</span>
+                                <span class="meta-value">$productData.handle</span>
+                            </div>
+                            #if($productData.createdAt)
+                                <div class="meta-item">
+                                    <span class="meta-label">Created:</span>
+                                    <span class="meta-value">$date.format('MMM dd, yyyy', $date.toDate($productData.createdAt))</span>
+                                </div>
+                            #end
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Description -->
+                #if($productData.descriptionHtml)
+                    <div class="product-description">
+                        <h3 class="description-title">Product Description</h3>
+                        <div class="description-content">
+                            $productData.descriptionHtml
+                        </div>
+                    </div>
+                #end
+
+                <!-- Tags -->
+                #if($productData.tags && $productData.tags.size() > 0)
+                    <div class="tags-section">
+                        <div class="tags-title">Tags:</div>
+                        <div class="tags">
+                            #foreach($tag in $productData.tags)
+                                <span class="tag">$tag</span>
+                            #end
+                        </div>
+                    </div>
+                #end
+            </div>
+
+        #else
+            <div class="product-detail">
+                <div style="text-align: center; padding: 60px 20px;">
+                    <h2>Product Not Found</h2>
+                    <p>The requested product could not be loaded. Please check the product ID or handle.</p>
+                </div>
+            </div>
+        #end
+    </div>
+
+    <script>
+        let selectedOptions = {};
+        let variants = [];
+
+        // Initialize variants data
+        #if($productData && $productData.variants && $productData.variants.edges)
+            variants = [
+                #foreach($variant in $productData.variants.edges)
+                    {
+                        id: "$variant.node.id",
+                        title: "$variant.node.title",
+                        price: "$variant.node.price.amount",
+                        currency: "$variant.node.price.currencyCode",
+                        image: "$!{variant.node.image.url}",
+                        options: "$variant.node.title".split(" / ")
+                    }#if($foreach.hasNext),#end
+                #end
+            ];
+        #end
+
+        function changeMainImage(imageUrl) {
+            document.getElementById('mainImage').src = imageUrl;
+
+            // Update active thumbnail
+            document.querySelectorAll('.variant-thumb').forEach(thumb => {
+                thumb.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function selectOption(element) {
+            const option = element.dataset.option;
+            const value = element.dataset.value;
+
+            // Remove selected class from siblings
+            element.parentNode.querySelectorAll('.option-value').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+
+            // Add selected class to clicked option
+            element.classList.add('selected');
+
+            // Store selection
+            selectedOptions[option] = value;
+
+            // Find matching variant
+            updateVariantSelection();
+        }
+
+        function updateVariantSelection() {
+            const selectedValues = Object.values(selectedOptions);
+
+            if (selectedValues.length === 0) return;
+
+            // Find variant that matches selected options
+            const matchingVariant = variants.find(variant => {
+                return selectedValues.every(value => variant.options.includes(value));
+            });
+
+            if (matchingVariant) {
+                // Update price
+                const priceElement = document.querySelector('.price');
+                if (priceElement) {
+                    priceElement.innerHTML = `$${matchingVariant.price} <span class="currency">${matchingVariant.currency}</span>`;
+                }
+
+                // Update main image if variant has image
+                if (matchingVariant.image) {
+                    changeMainImage(matchingVariant.image);
+                }
+            }
+        }
+
+        function addToCart() {
+            const button = document.querySelector('.add-to-cart-btn');
+            const loading = document.getElementById('loading');
+
+            // Show loading state
+            button.style.display = 'none';
+            loading.style.display = 'block';
+
+            // Simulate add to cart process
+            setTimeout(() => {
+                alert('Product added to cart! (This is a demo)');
+                button.style.display = 'block';
+                loading.style.display = 'none';
+            }, 1500);
+        }
+
+        // Initialize first variant image as active
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstThumb = document.querySelector('.variant-thumb');
+            if (firstThumb) {
+                firstThumb.classList.add('active');
+            }
+        });
+    </script>

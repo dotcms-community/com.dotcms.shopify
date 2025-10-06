@@ -8,7 +8,6 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
-import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.tools.view.context.ViewContext;
@@ -66,15 +65,21 @@ public class DotShopifyTool implements ViewTool {
 
     }
 
-   public Map<String, Object> getCollectionById(String id, int productLimit, String cursor, String beforeOrAfter, String sortKey) {
-      if (UtilMethods.isEmpty(id)) {
-         return null;
-      }
-      return api.get().collectionById(id);
+    public Map<String, Object> getCollectionById(String id, int productLimit, String cursor, String beforeOrAfter,
+            String sortKey) {
+        if (UtilMethods.isEmpty(id)) {
+            return null;
+        }
+        return api.get().collectionById(id);
 
-   }
+    }
 
-
+    public Map<String, Object> gql(String query, Map<String,Object> args) {
+        return api.get().rawQuery(query, args);
+    }
+    public Map<String, Object> gql(String query, String args) {
+        return api.get().rawQuery(query, args);
+    }
 
 
 }

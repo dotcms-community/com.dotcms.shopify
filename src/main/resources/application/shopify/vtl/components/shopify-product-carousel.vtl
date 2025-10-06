@@ -77,7 +77,7 @@
             const vendor = product.vendor || '';
             const price = product.priceRange?.minVariantPrice?.amount || '0';
             const description = this.truncateText(product.description || '', 120);
-            const productUrl = `/api/v1/shopify/product/_redirect?id=${product.id}`;
+            const productUrl = `/shopify/${product.handle}`;
 
             return `
                 <div class="product-card" data-index="${index}">
@@ -87,7 +87,7 @@
                              class="product-image"
                              onerror="this.onerror=null;this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';" />
                         <div class="product-overlay">
-                            <a href="${productUrl}" target="_blank" class="view-product-btn">
+                            <a href="${productUrl}"  class="view-product-btn">
                                 <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                                 </svg>

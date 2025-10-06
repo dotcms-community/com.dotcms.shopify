@@ -5,8 +5,10 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableColumnField;
+import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.model.field.ImmutableCustomField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableHiddenField;
 import com.dotcms.contenttype.model.field.ImmutableRowField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -115,7 +117,7 @@ public class ContentTypeUtil {
                             .variable("RowField00001").build());
             fields.add(
                     ImmutableColumnField.builder().name("ColumnField00001").id(PRODUCT_UUIDS[2]).sortOrder(10)
-                            .variable("ColumnField00001").build())
+                            .variable("ColumnField00001").build());
         }
 
         if (fields.stream().noneMatch(field -> field.variable().equalsIgnoreCase("title"))) {
@@ -193,6 +195,18 @@ public class ContentTypeUtil {
             fieldVars.addAll(field.fieldVariables());
         }
 
+        ImmutableConstantField codeField = (ImmutableConstantField) type.fieldMap().get("widgetCode");
+        if(codeField!=null && UtilMethods.isEmpty(codeField.values())){
+            codeField = ImmutableConstantField
+                    .copyOf(codeField)
+                    .withSortOrder(30)
+                    .withValues("#dotParse(\"/application/shopify/vtl/components/shopify-view-collection.vtl\")\n");
+            fields.add(codeField);
+        }
+
+
+
+
         Optional<Field> collectionField = fields.stream().filter(field -> field.id().equals("shopifyCollection"))
                 .findFirst();
         Optional<Field> shopifyCollectionImage = fields.stream()
@@ -240,6 +254,14 @@ public class ContentTypeUtil {
             String systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme().getId();
             APILocator.getWorkflowAPI().saveSchemeIdsForContentType(type, Set.of(systemWorkflowScheme));
         }
+        if(type.fieldMap().containsKey("widgetUsage")){
+            APILocator.getContentTypeFieldAPI().delete(type.fieldMap().get("widgetUsage"));
+        }
+        if(type.fieldMap().containsKey("widgetPreexecute")){
+            APILocator.getContentTypeFieldAPI().delete(type.fieldMap().get("widgetPreexecute"));
+        }
+
+
 
 
     }

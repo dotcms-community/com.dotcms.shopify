@@ -1,14 +1,14 @@
-query byHandle($handle: String!, $firstVariants: Int = 5) {
+query product($handle: String!, $firstVariants: Int = 1) {
     product(handle: $handle) {
-    ...ProductFields
-    variants(first: $firstVariants) {
-      edges {
-        node {
-          ...VariantFields
+        ...ProductFields
+        variants(first: $firstVariants) {
+            edges {
+                node {
+                    ...VariantFields
+                }
+            }
         }
-      }
     }
-  }
 }
 
 # storefrontAPI 2025-07

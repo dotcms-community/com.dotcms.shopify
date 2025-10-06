@@ -38,6 +38,29 @@ The plugin also provides a velocity viewtool  `$dotshopify` that allows you to p
 $dotshopify.getProduct("9257301049561").data.product.title
 ```
 
+
+### Product by Handle
+```
+$dotshopify.getProductByHandle("burton-freestyle-binding-2016").data.productByHandle.title
+```
+
+### RAW GQL
+
+```
+
+## build query
+#set($query = "query product($handle: String!, $firstVariants: Int = 1) { product(handle: $handle) { title id variants(first: $firstVariants) { edges { node { id title } } } } } ")
+
+## set args
+#set($args = {})
+$!args.put("handle", "burton-freestyle-binding-2016")
+$!args.put("firstVariants",1)
+
+$dotshopify.gql($query, $args).data.product.title
+```
+
+
+
 ### $dotshopify &  Products
 
 ```

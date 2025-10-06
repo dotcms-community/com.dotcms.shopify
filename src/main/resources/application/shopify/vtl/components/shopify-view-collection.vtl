@@ -1,6 +1,5 @@
 
 #set($myCollection = $json.generate($dotContentMap.shopifyCollection))
-
 #set($productsToShow = $myCollection.limit)
 #set($sortKey = $myCollection.sortKey)
 #set($shopifyData = $dotshopify.getCollectionById($myCollection.id))
@@ -10,7 +9,7 @@
 
 
 <!-- Include the product grid component -->
-#dotParse("/application/shopify/vtl/components/shopify-product-grid.vtl")
+#dotParse("/application/shopify/vtl/components/shopify-product-carousel.vtl")
 
 <div class="collection-header">
     <h1 class="collection-title">#if($collection.title)$collection.title#{else}Product Collection#end</h1>

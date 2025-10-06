@@ -6,6 +6,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONObject;
 import java.util.Map;
 
 public class ShopifyAPIImpl implements ShopifyAPI {
@@ -28,13 +29,16 @@ public class ShopifyAPIImpl implements ShopifyAPI {
 
     @Override
     public Map<String, Object> productByHandle(String handle) {
-        Logger.info(this.getClass(), "Getting product by ID: " + handle + " for host: " + host.getHostname());
+       return this.productByHandle(handle, 1);
+
+    }
+    @Override
+    public Map<String, Object> productByHandle(String handle, int variantLimit) {
+        Logger.info(this.getClass(), "Getting product by ID: " + handle + ", variants:" + variantLimit +" for host: " + host.getHostname());
         if (UtilMethods.isEmpty(handle)) {
             return Map.of("errors", "no handle provided ");
         }
-
-        return shopifyService.getProductByHandle(handle);
-
+        return shopifyService.getProductByHandle(handle, variantLimit);
     }
 
     @Override
@@ -76,7 +80,24 @@ public class ShopifyAPIImpl implements ShopifyAPI {
 
     @Override
     public Map<String, Object> rawQuery(String query) {
+
+        try {
+            JSONObject jsonObject = new JSONObject(query);
+            if(jsonObject.has("query") && jsonObject.has("variables")){
+                return this.rawQuery(jsonObject.getString("query"), jsonObject.getJSONObject("variables"));
+
+            }
+        } catch (Exception e) {
+            Logger.warnAndDebug(this.getClass(), "no variables in query, moving on:" + e.getMessage(), e);
+        }
+
         return this.rawQuery(query, Map.of());
+    }
+
+    @Override
+    public Map<String, Object> rawQuery(String query, String json) {
+        JSONObject jsonObject = new JSONObject(json);
+        return this.rawQuery(query, jsonObject);
     }
 
     @Override

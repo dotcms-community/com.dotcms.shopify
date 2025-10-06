@@ -12,7 +12,7 @@
 <!-- Include the product grid component -->
 #dotParse("/application/shopify/vtl/components/shopify-product-carousel.vtl")
 
-<div class="collection-header">
+<div class="collection-header" style="margin-top: 100px;">
     <h1 class="collection-title">#if($collection.title)$collection.title#{else}Product Collection#end</h1>
     #if($collection.description)
         <p class="collection-description">$collection.description</p>

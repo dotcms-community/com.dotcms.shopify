@@ -429,6 +429,17 @@
 
                         #end
                     </div>
+                    <!-- Tags -->
+                    #if($productData.tags && $productData.tags.size() > 0)
+                        <div class="tags-section">
+                            <div class="tags-title">Tags:</div>
+                            <div class="tags">
+                                #foreach($tag in $productData.tags)
+                                    <span class="tag">$tag</span>
+                                #end
+                            </div>
+                        </div>
+                    #end
                 </div>
 
             </div>
@@ -449,19 +460,6 @@
                         #end
                         </div>
                     </div>
-
-
-                <!-- Tags -->
-                #if($productData.tags && $productData.tags.size() > 0)
-                    <div class="tags-section">
-                        <div class="tags-title">Tags:</div>
-                        <div class="tags">
-                            #foreach($tag in $productData.tags)
-                                <span class="tag">$tag</span>
-                            #end
-                        </div>
-                    </div>
-                #end
             </div>
         </div>
 

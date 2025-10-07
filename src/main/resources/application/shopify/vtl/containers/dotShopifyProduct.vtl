@@ -1,0 +1,34 @@
+## Shopify Product Card
+#set($productData = $dotshopify.getProduct($dotContentMap.shopifyProduct).data.product)
+<!-- Container Code: /application/containers/defualt/dotShopifyProduct.vtl -->
+<div class="box-product box-product-modern">
+	#if($UtilMethods.isSet($dotContentMap.salePrice))<span class="badge badge-primary">Sale</span>#end
+	<div class="box-product-body">
+		<div class="box-product-button">
+			
+			<a class="button button-sm button-gray-400" href="/shopify/$!{productData.handle}">View details</a>
+		</div>
+		<div class="img-wrapper"><img class="box-product-img" src="/dA/$dotContentMap.identifier/500mw/500mh/$dotContentMap.title" alt="$!{productData.featuredImage.altText}"></div>
+	</div>
+	<h3 class="box-product-name"><a href="/shopify/$!{productData.handle}">$!{productData.title}</a></h3>
+    #if($productData.productType)
+        <div style="text-align:center">$productData.productType</div>
+    #end
+    #if($productData.vendor)
+        <div style="text-align:center">by $productData.vendor</div>
+    #end
+
+	<div class="box-product-prices">
+            <div class="price">
+               <span class="current-price sale-price">
+                $productData.priceRange.minVariantPrice.amount
+                $productData.priceRange.minVariantPrice.currencyCode</span>
+            </div>
+            #if($productData.priceRange.minVariantPrice.amount != $productData.priceRange.maxVariantPrice.amount)
+                <div style="font-size: 1rem; opacity: 0.9;">
+                    Price range: $$productData.priceRange.minVariantPrice.amount - $$productData.priceRange.maxVariantPrice.amount
+                </div>
+            #end
+	</div>
+</div>
+

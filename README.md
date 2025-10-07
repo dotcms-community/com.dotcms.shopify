@@ -217,6 +217,11 @@ TODOS:
 - [ ] Use Shopify Interceptor to load product information into request attribute automatically
 - [ ] Recommendations
 
+## Developing
+See [using the dotcli](https://github.com/dotcms-community/com.dotcms.shopify/tree/README-development.md) to learn how you can use the dotcli to live edit the .vtls and .gql queries that power much of this plugin.
+
+
+
 ## Building the plugin
 
 Build using maven

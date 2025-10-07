@@ -14,7 +14,7 @@ cd .tmp
 
 # set up file dir
 rm -rf files/live/en-us/demo.dotcms.com/application/shopify
-dotcli files pull -tk $LOCAL_TOK -nr //demo.dotcms.com/application
+dotcli files pull  -nr //demo.dotcms.com/application
 mkdir -p files/live/en-us/demo.dotcms.com/application/shopify/vtl/custom-fields
 mkdir -p files/live/en-us/demo.dotcms.com/application/shopify/vtl/components
 mkdir -p files/live/en-us/demo.dotcms.com/application/shopify/gql
@@ -25,4 +25,4 @@ ln ../src/main/resources/application/shopify/vtl/custom-fields/*.vtl files/live/
 ln ../src/main/resources/application/shopify/gql/*.gql files/live/en-us/demo.dotcms.com/application/shopify/gql/
 
 # watch us develop!
-dotcli files push -tk $LOCAL_TOK -w 2 ./files/live/en-us/demo.dotcms.com/application/shopify
+dotcli files push  -w 2 ./files/live/en-us/demo.dotcms.com/application/shopify

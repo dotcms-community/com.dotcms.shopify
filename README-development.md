@@ -6,8 +6,9 @@ When developing this plugin, it can be necessary to make iterative edits to the 
 
 
 ### Install dotcli
+```
 npm install -g @dotcms/dotcli
-
+```
 ### Config and Authenticate with dotcli
 Run 
 ```
@@ -23,6 +24,20 @@ to authenticate
 
 You are now connected with your dotcms instance.  
 
+## Use the development Script
+Once you have configured and inited your dotcli (from the root of this repo) you can run the `./dotcli-sync.sh` script.  It will do the following:
+
+1. Pull the files from dotCMS into a local folder
+2. Watch the folder for changes and push them to dotCMS
+
+This means that you can run `code .` and start editing the .vtl and .gql files in the `src/main/java/com.dotcms.shopify/resources` folder and start editing and they will be pushed to dotCMS.  You can then refresh your browser and see the changes.  This is a great way to develop the plugin.`
+
+
+
+
+
+
+## General use of dotcli
 ### Pull the assets you want to edit
 Let's say I want to edit a theme on the starter site.  I can run the cli to pull the assets from only that folder
 ```
@@ -41,10 +56,9 @@ dotcli files pull --help
 
 You can open up the folder and start editing to assets - `code .`
 
-### Pull the assets you want to edit
-And here is the magic - pushing with --watch enabled.  This will monitor the downloaded files and will sync any changes that are made to them with dotCMS.  It can handle large directories and if
+### Push the assets back
+And here is the magic - coding in VSCode while pushing with --watch enabled.  This will monitor the downloaded files and will sync any changes that are made to them with dotCMS.  It can handle large directories and if
 
 ```
 dotcli files push -w 2 ./files/live/en-us/demo.dotcms.com
 ```
-

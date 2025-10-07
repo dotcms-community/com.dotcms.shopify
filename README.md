@@ -1,3 +1,6 @@
+<img src="https://static.dotcms.com/assets/icons/apps/shopify-logo.png" width="150">
+
+
 # dotCMS Shopify Connector
 
 ### What's included:

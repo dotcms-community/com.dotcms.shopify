@@ -1,4 +1,4 @@
-<img src="https://static.dotcms.com/assets/icons/apps/shopify-logo.png" width="150">
+<img src="https://static.dotcms.com/assets/icons/apps/shopify-logo2.png" width="150">
 
 
 # dotCMS Shopify Connector

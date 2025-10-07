@@ -17,6 +17,8 @@
    - Grid to display product collections
    - Product detail page
 
+> Note: this plugin requires dotCMS version > 25.10.03
+
 
 ## Connector Installation
 

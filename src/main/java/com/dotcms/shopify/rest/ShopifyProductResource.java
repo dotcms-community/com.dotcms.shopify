@@ -155,7 +155,10 @@ public class ShopifyProductResource implements Serializable {
         if (UtilMethods.isSet(productSearcher.id)) {
             return Response.ok(api.productById(productSearcher.id)).build();
         }
-        if (UtilMethods.isEmpty(productSearcher.cursor)) {
+        else if (UtilMethods.isSet(productSearcher.handle)) {
+            return Response.ok(api.productByHandle(productSearcher.handle,productSearcher.variantLimit)).build();
+        }
+        else if (UtilMethods.isEmpty(productSearcher.cursor)) {
             return Response.ok(api.searchProducts(productSearcher.query, productSearcher.limit)).build();
         }
 

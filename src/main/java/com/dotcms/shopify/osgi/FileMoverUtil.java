@@ -56,7 +56,7 @@ public class FileMoverUtil {
                        .equalsIgnoreCase(packagePath + "/")) {
                   continue;
                }
-               System.out.println("jar path:" + entry.getName());
+               Logger.debug(FileMoverUtil.class,"jar path:" + entry.getName());
                jarEntries.add(entry);
 
             }

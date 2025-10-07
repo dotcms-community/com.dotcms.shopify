@@ -1,12 +1,11 @@
 package com.dotcms.shopify.api;
 
 import com.dotcms.shopify.api.ShopifyAPI.BEFORE_AFTER;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.QueryParam;
 
 /**
- * JAX-RS parameter class for product search operations.
- * Converts to immutable ProductSearcher using builder pattern.
+ * JAX-RS parameter class for product search operations. Converts to immutable ProductSearcher using builder pattern.
  */
 public class ShopifySearchParams {
 
@@ -39,6 +38,13 @@ public class ShopifySearchParams {
     @QueryParam("hostName")
     public String hostName;
 
+    @QueryParam("handle")
+    public String handle;
+
+    @QueryParam("variantLimit")
+    @DefaultValue("1")
+    public int variantLimit;
+
     /**
      * Default constructor required by JAX-RS
      */
@@ -47,8 +53,7 @@ public class ShopifySearchParams {
     }
 
     /**
-     * Converts these parameters to an immutable ProductSearcher using the builder
-     * pattern
+     * Converts these parameters to an immutable ProductSearcher using the builder pattern
      */
     public ProductSearcher toProductSearcher() {
         return ProductSearcher.builder()
@@ -58,8 +63,10 @@ public class ShopifySearchParams {
                 .reverse(reverse)
                 .sortKey(sortKey != null ? sortKey : SortKey.RELEVANCE)
                 .cursor(cursor)
+                .handle(handle)
                 .id(id)
                 .hostName(hostName)
+                .variantLimit(variantLimit)
                 .build();
     }
 }

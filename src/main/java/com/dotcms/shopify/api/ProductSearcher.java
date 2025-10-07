@@ -18,10 +18,12 @@ public class ProductSearcher {
     public final String cursor;
     public final String id;
     public final String hostName;
+    public final String handle;
+    public final int variantLimit;
 
     public ProductSearcher(BEFORE_AFTER before, int limit, String query, boolean reverse, SortKey sortKey,
             String cursor,
-            String id, String hostName) {
+            String id, String hostName, String handle,int variantLimit) {
         this.before = before;
         this.limit = limit;
         this.query = query;
@@ -30,6 +32,8 @@ public class ProductSearcher {
         this.cursor = cursor;
         this.id = id;
         this.hostName = hostName;
+        this.handle = handle;
+        this.variantLimit = variantLimit;
     }
 
     public static Builder builder() {
@@ -50,6 +54,9 @@ public class ProductSearcher {
                 ", reverse:" + reverse +
                 ", sortKey:" + sortKey.name() +
                 ", cursor:'" + cursor + '\'' +
+                ", hostName:'" + hostName + '\'' +
+                ", handle:'" + handle + '\'' +
+                ", variantLimit:" + variantLimit +
                 '}';
     }
 
@@ -63,6 +70,8 @@ public class ProductSearcher {
         private String cursor;
         private String id;
         private String hostName;
+        private String handle;
+        private int variantLimit = 10;
 
         @JsonProperty
         public Builder before(BEFORE_AFTER before) {
@@ -111,9 +120,20 @@ public class ProductSearcher {
             this.hostName = hostName;
             return this;
         }
+        @JsonProperty
+        public Builder handle(String handle) {
+            this.handle = handle;
+            return this;
+        }
+
+        @JsonProperty
+        public Builder variantLimit(int variantLimit) {
+            this.variantLimit = variantLimit;
+            return this;
+        }
 
         public ProductSearcher build() {
-            return new ProductSearcher(before, limit, query, reverse, sortKey, cursor, id, hostName);
+            return new ProductSearcher(before, limit, query, reverse, sortKey, cursor, id, hostName,handle,variantLimit);
         }
 
         public Builder copy(ProductSearcher searcher) {
@@ -125,6 +145,8 @@ public class ProductSearcher {
             this.cursor = searcher.cursor;
             this.id = searcher.id;
             this.hostName = searcher.hostName;
+            this.handle = searcher.handle;
+            this.variantLimit = searcher.variantLimit;
             return this;
         }
     }

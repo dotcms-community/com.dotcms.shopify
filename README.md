@@ -7,8 +7,8 @@
 
 1. dotCMS Shopify App to configure and test the connection between dotCMS and Shopify 
 2. Two automatically created content types that can connect content with Shopify products and collections.
-   - ShopifyProduct
-   - ShopifyCollection
+   - ShopifyProduct (Content)
+   - ShopifyCollection (Widget)
 3. Code for 2 custom fields for the above content types for easy content/product stitching, including syncing shopify thumbnails.
 4. REST endpoints for searching and retrieving information for Products and Product collections
 5. Graphql Endpoint for proxying custom graphql requests to Shopify.
@@ -16,6 +16,7 @@
 7. Example .vtl components for rendering Shopify in dotCMS using `$dotshopify` tool 
    - Grid to display product collections
    - Product detail page
+   - Example Container Code for ShopifyProduct
 
 > Note: this plugin requires dotCMS version > 25.10.03
 

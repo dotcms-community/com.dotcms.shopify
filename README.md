@@ -29,7 +29,7 @@ The dotCMS-Shopify Connector requires that you install the Shopify Headless Sale
 Once you have installed the headless sales channel, you will need to generate a private access token.  Navigate to the "Headless Sales Channels" link in the left nav and in the Manage API Access screen, click on the "Manage" Button for the Storefront API.  Click on the "Generate Private Access Token" button.  Copy the token and save it somewhere safe.  You will need this token to configure the dotCMS Shopify Connector.
 
 ### Step 2: Install dotCMS/Shopify Connector Plugin
-Upload the dotCMS Shopify plugin to your dotCMS instance. The latest plugin jar be found here: https://github.com/dotcms-community/com.dotcms.shopify/blob/main/target/shopify-25.05.20.jar.  Download this jar and then in your dotCMS, navigate to the plugins screen and upload the jar. After a few seconds, you should see the plugin load and become "active" - the plugin will automatically upload required assets into your `//{defaultHost}/application/shopify` directory.
+Upload the dotCMS Shopify plugin to your dotCMS instance. The latest plugin jar be found here: https://github.com/dotcms-community/com.dotcms.shopify/blob/main/target/shopify-25.10.05.jar.  Download this jar and then in your dotCMS, navigate to the plugins screen and upload the jar. After a few seconds, you should see the plugin load and become "active" - the plugin will automatically upload required assets into your `//{defaultHost}/application/shopify` directory.
 
 
 ### Step 3: Configure the dotCMS/Shopify Connector Plugin

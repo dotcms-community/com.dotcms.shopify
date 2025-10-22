@@ -1,5 +1,8 @@
 package com.dotcms.shopify.api;
 
+import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.http.CircuitBreakerUrl.Method;
+import com.dotcms.http.CircuitBreakerUrl.Response;
 import com.dotcms.shopify.api.ShopifyAPI.BEFORE_AFTER;
 import com.dotcms.shopify.osgi.FileMoverUtil;
 import com.dotcms.shopify.util.AppKey;
@@ -17,10 +20,6 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import io.vavr.control.Try;
 import java.io.InputStream;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collections;
@@ -37,16 +36,14 @@ public class ShopifyService {
 
     private static final String STOREFRONT_API_PATH = "/api/%s/graphql.json";
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
-    private final HttpClient httpClient;
+
     private final Host host;
 
     private final ShopifyCache cache = ShopifyCache.getInstance();
 
     public ShopifyService(Host host) {
         this.host = host;
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(DEFAULT_TIMEOUT)
-                .build();
+
     }
 
     private Map<String, String> getFragmentMap() {
@@ -166,23 +163,27 @@ public class ShopifyService {
 
             final String requestBodyString = requestBody.toString(2);
 
-            // Create the HTTP request
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .timeout(DEFAULT_TIMEOUT)
-                    .header("Content-Type", "application/json")
-                    .header("Shopify-Storefront-Private-Token", apiKey)
-                    .POST(HttpRequest.BodyPublishers.ofString(requestBody.toString()))
+            Map<String, String> headers = Map.of("Content-Type", "application/json", "Shopify-Storefront-Private-Token",
+                    apiKey);
+
+            CircuitBreakerUrl request = CircuitBreakerUrl
+                    .builder()
+                    .setUrl(url)
+                    .setHeaders(headers)
+                    .setMethod(Method.POST)
+                    .setRawData(requestBodyString)
+                    .setThrowWhenError(true)
                     .build();
 
-            // Execute the request
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            try {
 
-            Map<String, List<String>> headers = response.headers().map();
-            if (response.statusCode() == 200) {
-                String responseBody = response.body();
-
-                JSONObject jsonResponse = new JSONObject(responseBody);
+                Response<String> response = request.doResponse();
+                if (response == null) {
+                    Logger.error(this, "GraphQL request failed");
+                    Logger.error(this, " GraphQL request failed: Original Request: \n" + requestBodyString);
+                    return new JSONObject(Map.of("errors", "GraphQL request failed"));
+                }
+                JSONObject jsonResponse = new JSONObject(response.getResponse());
 
                 if (jsonResponse.has("errors")) {
                     Logger.error(this, "GraphQL request failed");
@@ -198,13 +199,14 @@ public class ShopifyService {
                     return jsonResponse;
                 }
 
-                return parseGraphQLResponse(responseBody);
-            } else {
-                Logger.error(this, "GraphQL request failed with status: " + response.statusCode() +
-                        ", body: " + response.body());
+                return parseGraphQLResponse(response.getResponse());
+            } catch (Exception e) {
+
+                Logger.error(this, "GraphQL request failed with status: " + e.getMessage());
                 Logger.error(this, " Failed GraphQL query:" + query);
-                return new JSONObject(Map.of("errors", "GraphQL request failed with status: " + response.statusCode() +
-                        ", body: " + response.body()));
+                return new JSONObject(Map.of("errors", "GraphQL request failed with : " + e.getMessage()));
+
+
             }
 
         } catch (Exception e) {
@@ -322,10 +324,11 @@ public class ShopifyService {
 
    /**
     * Get collection by ID using GraphQL
-    *
-    * @param collectionId The Shopify collection ID (gid format)
+    * @param searcher
     * @return Collection data as a Map
-    */
+
+    * /
+
    public Map<String, Object> getCollectionByIdWithOptions(ProductSearcher searcher) {
       String query = loadQueryAndReplaceFragments("getCollectionById.gql");
       if (query.isEmpty()) {
@@ -341,13 +344,9 @@ public class ShopifyService {
    }
 
 
-
-
     /**
-     *
-     * @param searchQuery
-     * @param limit
-     * @param sortKey
+    * Search collections using GraphQL
+    * @param searcher
      * @return
      */
     public Map<String, Object> searchCollections(ProductSearcher searcher) {
